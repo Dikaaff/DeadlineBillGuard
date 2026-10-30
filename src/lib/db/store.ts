@@ -473,6 +473,16 @@ export const store = {
       .reverse();
   },
 
+  async listPaypalEventsForBill(userId: string, billId: string) {
+    const db = await readDatabase();
+    const bill = db.bills.find((b) => b.id === billId && b.userId === userId);
+    if (!bill) return [];
+    return db.paypalEvents
+      .filter((e) => e.billId === billId)
+      .slice()
+      .reverse();
+  },
+
   async exportAccount(userId: string) {
     const db = await readDatabase();
     const user = db.users.find((u) => u.id === userId) ?? null;

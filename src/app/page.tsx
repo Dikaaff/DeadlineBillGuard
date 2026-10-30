@@ -73,7 +73,7 @@ const FAQ = [
   },
   {
     q: "Where does my data live?",
-    a: "Locally in a JSON store for the demo, with a Supabase schema and row-level security included for the production swap.",
+    a: "In a file-backed JSON store on the server (`.data/` by default) so the demo needs no database. Point DBG_DATA_DIR at a persistent volume when you deploy.",
   },
 ];
 

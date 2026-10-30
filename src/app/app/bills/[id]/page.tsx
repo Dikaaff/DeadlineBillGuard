@@ -5,7 +5,6 @@ import {
   BellRingIcon,
   CheckCircle2Icon,
   CircleDollarSignIcon,
-  ExternalLinkIcon,
   MailIcon,
   PencilIcon,
   RefreshCwIcon,
@@ -25,6 +24,7 @@ import {
   startCheckoutAction,
 } from "@/lib/actions/bills";
 import { requireUser } from "@/lib/auth";
+import { store } from "@/lib/db/store";
 import { getBillContext, yearlyEquivalent } from "@/lib/domain";
 import {
   categoryLabel,
@@ -58,6 +58,7 @@ export default async function BillDetailPage({
   if (!context) notFound();
 
   const { bill, reminders, subscription } = context;
+  const paypalEvents = await store.listPaypalEventsForBill(user.id, bill.id);
   const isPaid = bill.status === "paid";
   const isOverdue = bill.status === "overdue";
 
@@ -138,7 +139,7 @@ export default async function BillDetailPage({
                   <form action={startCheckoutAction.bind(null, bill.id)}>
                     <Button type="submit" className="bg-[#0070ba] text-white hover:bg-[#005ea6]">
                       <CircleDollarSignIcon data-icon="inline-start" />
-                      Pay {formatMoneyWhole(bill.amountCents, "USD")} with PayPal
+                      Pay {formatMoneyWhole(bill.amountCents, bill.currency)} with PayPal
                     </Button>
                   </form>
                   <form action={markPaidManuallyAction.bind(null, bill.id)}>
@@ -147,12 +148,6 @@ export default async function BillDetailPage({
                       Mark as paid
                     </Button>
                   </form>
-                  <Button asChild variant="ghost">
-                    <a href={`https://www.paypal.com/paypalme/`} target="_blank" rel="noreferrer">
-                      <ExternalLinkIcon data-icon="inline-start" />
-                      Pay at merchant
-                    </a>
-                  </Button>
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[color:var(--status-paid-border)] bg-[color:var(--status-paid-surface)] px-4 py-3">
@@ -230,6 +225,42 @@ export default async function BillDetailPage({
               </CardContent>
             </Card>
           ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CircleDollarSignIcon className="size-4 text-muted-foreground" />
+                PayPal activity
+              </CardTitle>
+              <CardDescription>
+                Orders, captures and webhook reconciliations recorded for this bill.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-0">
+              {paypalEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No PayPal events yet. Start a checkout to see the order and capture trail.
+                </p>
+              ) : (
+                paypalEvents.map((event, index) => (
+                  <div key={event.id} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <span className="mt-1.5 size-2.5 rounded-full bg-[#0070ba]" />
+                      {index < paypalEvents.length - 1 ? (
+                        <span className="my-1 w-px flex-1 bg-border" />
+                      ) : null}
+                    </div>
+                    <div className="pb-4">
+                      <p className="font-mono text-xs font-medium">{event.eventType}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDateTime(event.receivedAt)} · {event.eventId}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex flex-col gap-5">
