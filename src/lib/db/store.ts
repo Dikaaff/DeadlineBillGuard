@@ -31,11 +31,37 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
+// Windows can briefly lock the target file (antivirus, indexer, another
+// dev server), making rename fail with EPERM/EBUSY. Retry before giving up.
+const RENAME_RETRY_CODES = new Set(["EPERM", "EBUSY", "EACCES", "EEXIST", "ENOENT"]);
+
+async function renameWithRetry(from: string, to: string): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      await fs.rename(from, to);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (!code || !RENAME_RETRY_CODES.has(code)) throw error;
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1)));
+    }
+  }
+  // Last resort: overwrite in place so the write is not lost.
+  try {
+    await fs.copyFile(from, to);
+    await fs.unlink(from);
+  } catch {
+    throw lastError;
+  }
+}
+
 async function writeDatabase(db: Database): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true });
   const tmp = `${DATA_FILE}.${process.pid}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(db, null, 2), "utf8");
-  await fs.rename(tmp, DATA_FILE);
+  await renameWithRetry(tmp, DATA_FILE);
 }
 
 async function readDatabase(): Promise<Database> {

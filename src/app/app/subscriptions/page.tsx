@@ -232,11 +232,11 @@ export default async function SubscriptionsPage() {
         </div>
       </Card>
 
-      <p className="text-xs text-muted-foreground">
+      <div className="text-xs text-muted-foreground">
         Subscriptions are inferred from recurring merchants.{" "}
         <Separator orientation="vertical" className="mx-1 inline-block h-3" /> Flagging a plan as
         unused never cancels it automatically — you stay in control.
-      </p>
+      </div>
     </div>
   );
 }

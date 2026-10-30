@@ -51,9 +51,16 @@ export function toISODate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+const ISO_DATE_PREFIX = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/** Accepts both `YYYY-MM-DD` and full ISO timestamps (`YYYY-MM-DDTHH:mm:ss.sssZ`). */
 export function parseISODate(value: string): Date {
-  const [y, m, d] = value.split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1);
+  const match = ISO_DATE_PREFIX.exec(value);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date(NaN) : parsed;
 }
 
 export function addDaysISO(value: string, days: number): string {
@@ -83,22 +90,28 @@ export function dueLabel(dueDate: string, status?: string): string {
   return `${Math.abs(diff)} days overdue`;
 }
 
+const DATE_FORMATTERS = {
+  short: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }),
+  long: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }),
+} as const;
+
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export function formatDate(value: string, style: "short" | "long" = "short"): string {
   const date = parseISODate(value);
-  return new Intl.DateTimeFormat("en-US", {
-    month: style === "long" ? "long" : "short",
-    day: "numeric",
-    year: style === "long" ? "numeric" : undefined,
-  }).format(date);
+  if (Number.isNaN(date.getTime())) return value || "—";
+  return DATE_FORMATTERS[style].format(date);
 }
 
 export function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value || "—";
+  return DATE_TIME_FORMATTER.format(date);
 }
 
 export function formatMonth(date = new Date()): string {
