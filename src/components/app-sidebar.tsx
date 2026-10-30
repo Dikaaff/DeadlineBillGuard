@@ -88,7 +88,9 @@ export function AppSidebar({
                     )}
                   >
                     <Link href={item.href}>
-                      <item.icon />
+                      <item.icon
+                        className={cn(isActive(item.href) && "text-sidebar-primary")}
+                      />
                       <span>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -115,7 +117,9 @@ export function AppSidebar({
                   className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
                 >
                   <Link href="/app/settings">
-                    <Settings2 />
+                    <Settings2
+                      className={cn(isActive("/app/settings") && "text-sidebar-primary")}
+                    />
                     <span>Settings</span>
                   </Link>
                 </SidebarMenuButton>

@@ -65,13 +65,13 @@ export function reminderEmailHtml(input: {
         ? "is due tomorrow"
         : `is due in ${input.offsetDays} days`;
   return `<!doctype html>
-<html><body style="margin:0;background:#f8f6f0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#1f2d27">
+<html><body style="margin:0;background:#f7f5ee;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#232838">
   <div style="max-width:520px;margin:0 auto;padding:32px 24px">
-    <p style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b7a72;margin:0 0 20px">Deadline Bill Guard</p>
+    <p style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b6f80;margin:0 0 20px">Deadline Bill Guard</p>
     <h1 style="font-size:26px;line-height:1.2;margin:0 0 12px">${input.merchant} ${urgency}</h1>
-    <p style="margin:0 0 24px;color:#4b5a53">${input.name}, ${input.amount} leaves your account on ${input.dueLabel}. You still have time to check it.</p>
-    <a href="${input.appUrl}/app/bills/${input.billId}" style="display:inline-block;background:#1d4a3a;color:#f8f6f0;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:600">Open the bill</a>
-    <p style="margin:28px 0 0;font-size:12px;color:#7b8880">You are receiving this because you forwarded this bill to Bill Guard. Turn reminders off in Settings.</p>
+    <p style="margin:0 0 24px;color:#4c5163">${input.name}, ${input.amount} leaves your account on ${input.dueLabel}. You still have time to check it.</p>
+    <a href="${input.appUrl}/app/bills/${input.billId}" style="display:inline-block;background:#232a3d;color:#f7f5ee;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:600">Open the bill</a>
+    <p style="margin:28px 0 0;font-size:12px;color:#7b7f8e">You are receiving this because you forwarded this bill to Bill Guard. Turn reminders off in Settings.</p>
   </div>
 </body></html>`;
 }
