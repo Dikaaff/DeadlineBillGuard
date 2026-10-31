@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeftIcon, CheckCircle2Icon, PlayIcon } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { LoginForm } from "@/components/login-form";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -23,14 +24,14 @@ export default async function LoginPage() {
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[color:var(--sidebar)] p-10 text-[color:var(--sidebar-foreground)] lg:flex">
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-panel p-10 text-panel-foreground lg:flex">
         <div className="pointer-events-none absolute -right-24 top-10 size-96 rounded-full bg-white/[0.03] blur-2xl" />
-        <Link href="/" className="flex items-center gap-2.5 text-white/90">
+        <Link href="/" className="flex items-center gap-2.5 text-panel-foreground/90">
           <Logo />
         </Link>
 
         <div className="relative max-w-md">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/45">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-panel-foreground/45">
             Deadline Bill Guard
           </p>
           <h1 className="mt-4 text-4xl font-display leading-[1.05] tracking-[-0.02em]">
@@ -38,14 +39,14 @@ export default async function LoginPage() {
             <br />
             You already handled it.
           </h1>
-          <p className="mt-4 text-sm leading-relaxed text-white/60">
+          <p className="mt-4 text-sm leading-relaxed text-panel-foreground/60">
             Sign in with any email to start clean, or jump straight into the seeded demo where the
             whole flow is wired.
           </p>
 
           <ul className="mt-8 space-y-3">
             {PROOF.map((item) => (
-              <li key={item} className="flex items-center gap-2.5 text-sm text-white/75">
+              <li key={item} className="flex items-center gap-2.5 text-sm text-panel-foreground/75">
                 <CheckCircle2Icon className="size-4 text-[color:var(--status-paid)]" />
                 {item}
               </li>
@@ -53,7 +54,7 @@ export default async function LoginPage() {
           </ul>
         </div>
 
-        <p className="text-xs text-white/35">
+        <p className="text-xs text-panel-foreground/35">
           No bank connection. No card required. Demo data resets on demand.
         </p>
       </div>
@@ -64,12 +65,15 @@ export default async function LoginPage() {
             <ArrowLeftIcon className="size-4" />
             Back
           </Link>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/">
-              <ArrowLeftIcon data-icon="inline-start" />
-              Back to site
-            </Link>
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/">
+                <ArrowLeftIcon data-icon="inline-start" />
+                Back to site
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-1 items-center justify-center px-5 pb-16 pt-4">

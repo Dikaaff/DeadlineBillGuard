@@ -66,23 +66,23 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1.45fr_1fr]">
         {nextBill ? (
-          <section className="relative flex flex-col justify-between overflow-hidden rounded-2xl bg-primary p-6 text-primary-foreground shadow-sm ring-1 ring-primary/10 sm:p-7">
+          <section className="relative flex flex-col justify-between overflow-hidden rounded-2xl bg-panel p-6 text-panel-foreground shadow-sm ring-1 ring-white/10 sm:p-7">
             <div className="pointer-events-none absolute inset-0 grain opacity-20" />
             <div className="pointer-events-none absolute -right-16 -top-24 size-64 rounded-full bg-sidebar-primary/15 blur-2xl" />
 
             <div className="relative flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-medium text-primary-foreground/60">Next bill due</p>
+                <p className="text-xs font-medium text-panel-foreground/60">Next bill due</p>
                 <div className="mt-2 flex items-center gap-2.5">
                   <h2 className="font-display text-3xl sm:text-4xl">{nextBill.merchant}</h2>
                 </div>
-                <p className="mt-1.5 text-sm text-primary-foreground/65">
+                <p className="mt-1.5 text-sm text-panel-foreground/65">
                   {categoryLabel(nextBill.category)} · {dueLabel(nextBill.dueDate, nextBill.status)}
                 </p>
               </div>
               <Badge
                 variant="outline"
-                className="border-white/15 bg-white/5 text-primary-foreground/75"
+                className="border-white/15 bg-white/5 text-panel-foreground/75"
               >
                 {formatDate(nextBill.dueDate, "long")}
               </Badge>
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
                   <Button
                     type="submit"
                     variant="secondary"
-                    className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                    className="bg-white text-panel hover:bg-white/90"
                   >
                     Pay with PayPal
                   </Button>
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
                 <Button
                   asChild
                   variant="ghost"
-                  className="text-primary-foreground/80 hover:bg-white/10 hover:text-primary-foreground"
+                  className="text-panel-foreground/80 hover:bg-white/10 hover:text-panel-foreground"
                 >
                   <Link href={`/app/bills/${nextBill.id}`}>
                     Details

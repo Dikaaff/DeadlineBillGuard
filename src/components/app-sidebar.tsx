@@ -62,7 +62,7 @@ export function AppSidebar({
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="px-3 py-4">
         <Link href="/app" className="flex items-center gap-2 px-1 text-sidebar-foreground">
           <Logo wordmarkClassName="group-data-[collapsible=icon]:hidden" />
@@ -141,7 +141,7 @@ export function AppSidebar({
                 "h-5 border-transparent px-1.5 text-[10px]",
                 overdueCount > 0
                   ? "bg-sidebar-primary/15 text-sidebar-primary"
-                  : "bg-white/5 text-sidebar-foreground/60",
+                  : "bg-sidebar-accent text-sidebar-foreground/60",
               )}
             >
               {mode === "demo" ? "Demo" : "Live"}

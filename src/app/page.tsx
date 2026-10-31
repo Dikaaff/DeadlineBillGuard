@@ -13,6 +13,7 @@ import { Logo } from "@/components/brand";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/copy-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const STEPS = [
   {
@@ -89,6 +90,7 @@ export default function LandingPage() {
             <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
           </nav>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
               <Link href="/login">Sign in</Link>
             </Button>
@@ -170,7 +172,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="relative mx-auto w-full max-w-[360px] rotate-[-1.5deg] rounded-xl border border-border bg-card p-6 shadow-[0_24px_60px_-30px_rgba(23,48,38,0.45)]">
+              <div className="relative mx-auto w-full max-w-[360px] rotate-[-1.5deg] rounded-xl border border-border bg-card p-6 shadow-[0_24px_60px_-30px_rgba(13,22,38,0.35)]">
                 <div className="flex items-start justify-between border-b border-dashed border-border pb-4">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -303,10 +305,10 @@ Account number: 4412-8891`}
           </div>
         </section>
 
-        <section id="savings" className="border-y border-border/70 bg-[color:var(--sidebar)] text-[color:var(--sidebar-foreground)]">
+        <section id="savings" className="border-y border-border/70 bg-background">
           <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-16 lg:grid-cols-[1fr_1fr] lg:items-center lg:py-24">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                 The quiet leak
               </p>
               <h2 className="mt-3 text-3xl font-display leading-tight tracking-[-0.02em] sm:text-4xl">
@@ -314,19 +316,19 @@ Account number: 4412-8891`}
                 <br />
                 Forgotten subscriptions are not.
               </h2>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-white/65">
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
                 Bill Guard groups recurring merchants and asks one honest question: do you still
                 use this? Flag it once and see the yearly total you could recover.
               </p>
-              <Button asChild variant="secondary" size="lg" className="mt-7">
+              <Button asChild size="lg" className="mt-7">
                 <Link href="/login">
                   See your own leak
                   <ArrowRightIcon data-icon="inline-end" />
                 </Link>
               </Button>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
-              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="flex items-center justify-between border-b border-border pb-4">
                 <p className="text-sm font-medium">Flagged as unused</p>
                 <Badge className="bg-[color:var(--status-due)]/20 font-normal text-[color:var(--status-due)] hover:bg-[color:var(--status-due)]/20">
                   3 plans
@@ -341,14 +343,14 @@ Account number: 4412-8891`}
                   <div key={name} className="flex items-center justify-between gap-4">
                     <div>
                       <p className="font-medium">{name}</p>
-                      <p className="text-xs text-white/50">{monthly}</p>
+                      <p className="text-xs text-muted-foreground">{monthly}</p>
                     </div>
                     <p className="tabular font-mono text-sm text-[color:var(--status-due)]">+{yearly}/yr</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-5 flex items-end justify-between border-t border-white/10 pt-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/50">Recoverable</p>
+              <div className="mt-5 flex items-end justify-between border-t border-border pt-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Recoverable</p>
                 <p className="tabular font-display text-4xl leading-none">$1,283.76</p>
               </div>
             </div>
