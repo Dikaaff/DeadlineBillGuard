@@ -10,25 +10,29 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/app\/?$/, { timeout: 30_000 });
 }
 
-/** Clicks "Save reminders" and waits until the action has round-tripped and navigated. */
-async function saveReminders(page: Page) {
-  await Promise.all([
-    page.waitForResponse((response) => response.request().method() === "POST"),
-    page.getByRole("button", { name: "Save reminders" }).click(),
-  ]);
-  await page.waitForURL(/reminders=1/, { timeout: 30_000 });
-  await page.getByText("Reminder settings saved").waitFor({ state: "visible" });
+/** Reminder switches save automatically; wait for the inline "Saved" status. */
+async function expectSaved(page: Page) {
+  await expect(page.getByRole("status")).toContainText("Saved", { timeout: 30_000 });
 }
 
 async function setReminders(page: Page, prefs: { enabled: boolean; hour?: string }) {
   const toggle = page.getByRole("switch", { name: "Email reminders" });
   const isOn = (await toggle.getAttribute("aria-checked")) === "true";
-  if (isOn !== prefs.enabled) await toggle.click();
+  if (isOn !== prefs.enabled) {
+    await toggle.click();
+    await expectSaved(page);
+  }
   if (prefs.hour) {
     await page.getByRole("combobox", { name: "Send at" }).click();
-    await page.getByRole("option", { name: prefs.hour }).click();
+    const option = page.getByRole("option", { name: prefs.hour });
+    // Re-selecting the current value fires no change event (and no auto-save), so skip it.
+    if ((await option.getAttribute("aria-selected")) === "true") {
+      await page.keyboard.press("Escape");
+    } else {
+      await option.click();
+      await expectSaved(page);
+    }
   }
-  await saveReminders(page);
 }
 
 test("create, pay and delete a bill", async ({ page }) => {

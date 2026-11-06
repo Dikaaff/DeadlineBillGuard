@@ -1,8 +1,18 @@
-import { PiggyBankIcon, Repeat2Icon, SparklesIcon } from "lucide-react";
+import Link from "next/link";
+import { PiggyBankIcon, PlusIcon, Repeat2Icon, SparklesIcon } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { CategoryIcon } from "@/components/category-icon";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -16,7 +26,13 @@ import { setUsageAction } from "@/lib/actions/subscriptions";
 import { requireUser } from "@/lib/auth";
 import { store } from "@/lib/db/store";
 import { yearlyEquivalent } from "@/lib/domain";
-import { categoryLabel, formatDate, formatMoney } from "@/lib/format";
+import {
+  categoryLabel,
+  formatDate,
+  formatMoney,
+  formatMoneyTotals,
+  sumByCurrency,
+} from "@/lib/format";
 import type { Subscription, UsageStatus } from "@/lib/types";
 import { cn } from "cn";
 
@@ -63,11 +79,15 @@ export default async function SubscriptionsPage() {
   const user = await requireUser();
   const subscriptions = await store.listSubscriptions(user.id);
 
-  const monthlyTotal = subscriptions
-    .filter((s) => s.usageStatus !== "unused")
-    .reduce((sum, s) => sum + s.avgAmountCents, 0);
+  const monthlyTotals = sumByCurrency(
+    subscriptions
+      .filter((s) => s.usageStatus !== "unused")
+      .map((s) => ({ amountCents: s.avgAmountCents, currency: s.currency })),
+  );
   const unused = subscriptions.filter((s) => s.usageStatus === "unused");
-  const savingsYearly = unused.reduce((sum, s) => sum + yearlyEquivalent(s), 0);
+  const savingsYearTotals = sumByCurrency(
+    unused.map((s) => ({ amountCents: yearlyEquivalent(s), currency: s.currency })),
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5">
@@ -79,6 +99,31 @@ export default async function SubscriptionsPage() {
         </p>
       </div>
 
+      {subscriptions.length === 0 ? (
+        <Card>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Repeat2Icon />
+              </EmptyMedia>
+              <EmptyTitle>No subscriptions tracked yet</EmptyTitle>
+              <EmptyDescription>
+                Once the same merchant shows up repeatedly in your bills, it appears here so you can
+                flag plans you no longer use.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button asChild>
+                <Link href="/app/bills/new">
+                  <PlusIcon data-icon="inline-start" />
+                  Add a bill
+                </Link>
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </Card>
+      ) : (
+      <>
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="sm:col-span-1">
           <CardHeader className="pb-2">
@@ -89,7 +134,7 @@ export default async function SubscriptionsPage() {
           </CardHeader>
           <CardContent>
             <p className="tabular font-display text-4xl leading-none">
-              {formatMoney(savingsYearly, "USD")}
+              {formatMoneyTotals(savingsYearTotals, user.currency)}
             </p>
             <p className="mt-1.5 text-xs text-muted-foreground">
               From {unused.length} flagged plan{unused.length === 1 ? "" : "s"}
@@ -117,7 +162,7 @@ export default async function SubscriptionsPage() {
           </CardHeader>
           <CardContent>
             <p className="tabular font-display text-4xl leading-none">
-              {formatMoney(monthlyTotal, "USD")}
+              {formatMoneyTotals(monthlyTotals, user.currency)}
             </p>
             <p className="mt-1.5 text-xs text-muted-foreground">Excludes plans you flagged unused</p>
           </CardContent>
@@ -233,6 +278,8 @@ export default async function SubscriptionsPage() {
           ))}
         </div>
       </Card>
+      </>
+      )}
 
       <div className="text-xs text-muted-foreground">
         Subscriptions are inferred from recurring merchants.{" "}

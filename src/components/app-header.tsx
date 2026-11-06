@@ -63,12 +63,19 @@ export function AppHeader({
 
       <div className="ml-auto flex items-center gap-1.5">
         {pathname !== "/app/bills/new" ? (
-          <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/app/bills/new">
-              <PlusIcon data-icon="inline-start" />
-              Add bill
-            </Link>
-          </Button>
+          <>
+            <Button asChild size="icon" className="sm:hidden" aria-label="Add bill">
+              <Link href="/app/bills/new">
+                <PlusIcon />
+              </Link>
+            </Button>
+            <Button asChild size="sm" className="hidden sm:inline-flex">
+              <Link href="/app/bills/new">
+                <PlusIcon data-icon="inline-start" />
+                Add bill
+              </Link>
+            </Button>
+          </>
         ) : null}
 
         <Popover>

@@ -43,13 +43,21 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
         mode="demo"
       />
       <SidebarInset>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring"
+        >
+          Skip to content
+        </a>
         <AppHeader
           user={{ name: user.name, email: user.email, initials: initials(user.name) }}
           reminders={headerReminders}
           remindersEnabled={user.remindersEnabled !== false}
           reminderHour={user.reminderHour ?? 9}
         />
-        <div className="flex-1 px-4 pb-10 pt-6 md:px-8 md:pt-8">{children}</div>
+        <main id="main" tabIndex={-1} className="flex-1 px-4 pb-10 pt-6 md:px-8 md:pt-8">
+          {children}
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

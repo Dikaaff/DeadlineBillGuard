@@ -429,6 +429,11 @@ export const store = {
     return db.ingests.filter((i) => i.userId === userId).slice(0, limit);
   },
 
+  async countIngests(userId: string): Promise<number> {
+    const db = await readDatabase();
+    return db.ingests.filter((i) => i.userId === userId).length;
+  },
+
   async getIngest(userId: string, id: string): Promise<IngestLog | null> {
     const db = await readDatabase();
     return db.ingests.find((i) => i.id === id && i.userId === userId) ?? null;

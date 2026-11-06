@@ -39,6 +39,55 @@ export function formatMoneyWhole(cents: number, currency: CurrencyCode = "USD"):
   }).format(cents / 100);
 }
 
+export interface MoneyTotal {
+  currency: CurrencyCode;
+  cents: number;
+}
+
+/**
+ * Groups amounts by currency. There is no FX conversion anywhere in the app, so totals stay
+ * separate instead of silently adding e.g. rupiah to dollars.
+ */
+export function sumByCurrency(
+  items: ReadonlyArray<{ amountCents: number; currency: CurrencyCode }>,
+): MoneyTotal[] {
+  const totals = new Map<CurrencyCode, number>();
+  for (const item of items) {
+    totals.set(item.currency, (totals.get(item.currency) ?? 0) + item.amountCents);
+  }
+  return [...totals.entries()]
+    .map(([currency, cents]) => ({ currency, cents }))
+    .sort((a, b) => b.cents - a.cents);
+}
+
+/** The currency most bills are denominated in, used for single-currency charts. */
+export function dominantCurrency(
+  items: ReadonlyArray<{ currency: CurrencyCode }>,
+  fallback: CurrencyCode = "USD",
+): CurrencyCode {
+  const counts = new Map<CurrencyCode, number>();
+  for (const item of items) counts.set(item.currency, (counts.get(item.currency) ?? 0) + 1);
+  let best: CurrencyCode = fallback;
+  let bestCount = 0;
+  for (const [currency, count] of counts) {
+    if (count > bestCount) {
+      best = currency;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/** Formats a set of per-currency totals, e.g. "$120 + Rp1.500.000". */
+export function formatMoneyTotals(
+  totals: ReadonlyArray<MoneyTotal>,
+  fallback: CurrencyCode = "USD",
+): string {
+  const nonZero = totals.filter((total) => total.cents !== 0);
+  if (nonZero.length === 0) return formatMoneyWhole(0, fallback);
+  return nonZero.map((total) => formatMoneyWhole(total.cents, total.currency)).join(" + ");
+}
+
 export function todayISO(): string {
   const d = new Date();
   return toISODate(d);
@@ -156,7 +205,7 @@ const TIME_OPTIONS: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-d
 const formatterCache = new Map<string, Intl.DateTimeFormat>();
 
 function formatter(options: Intl.DateTimeFormatOptions, timeZone?: string): Intl.DateTimeFormat {
-  const key = `${timeZone ?? ""}|${options.month}|${options.day}|${options.year ?? ""}|${options.hour ?? ""}`;
+  const key = `${timeZone ?? ""}|${options.weekday ?? ""}|${options.month}|${options.day}|${options.year ?? ""}|${options.hour ?? ""}`;
   const cached = formatterCache.get(key);
   if (cached) return cached;
 
@@ -193,8 +242,13 @@ export function formatDateTime(value: string, timeZone?: string): string {
   return formatter(DATE_TIME_OPTIONS, timeZone).format(date);
 }
 
-export function formatMonth(date = new Date()): string {
-  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date);
+export function formatMonth(date = new Date(), timeZone?: string): string {
+  return formatter({ month: "long", year: "numeric" }, timeZone).format(date);
+}
+
+/** Weekday + month + day for "today" in the user's timezone. */
+export function formatWeekdayDate(date = new Date(), timeZone?: string): string {
+  return formatter({ weekday: "long", month: "long", day: "numeric" }, timeZone).format(date);
 }
 
 export function initials(merchant: string): string {

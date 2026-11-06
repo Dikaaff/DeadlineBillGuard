@@ -18,7 +18,13 @@ export default function AppError({
         <AlertTriangleIcon />
         <AlertTitle>Something broke on this page</AlertTitle>
         <AlertDescription>
-          {error.message || "The server hit an unexpected error. Your data is unchanged."}
+          The server hit an unexpected error. Your data is unchanged, so you can try again or go
+          back to the overview.
+          {error.digest ? (
+            <span className="mt-1 block font-mono text-[11px] text-muted-foreground">
+              Reference: {error.digest}
+            </span>
+          ) : null}
         </AlertDescription>
       </Alert>
       <div className="flex flex-wrap gap-2">

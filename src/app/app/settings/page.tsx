@@ -5,11 +5,13 @@ import {
   KeyRoundIcon,
   RefreshCcwIcon,
   ShieldAlertIcon,
-  Trash2Icon,
   UserRoundIcon,
 } from "lucide-react";
 import { ActionButton } from "@/components/action-button";
 import { CopyButton } from "@/components/copy-button";
+import { DeleteAccountDialog } from "@/components/delete-account-dialog";
+import { FlashAlert } from "@/components/flash-alert";
+import { ReminderSettingsForm } from "@/components/reminder-settings-form";
 import { SubmitButton } from "@/components/submit-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -26,13 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import {
-  deleteAccountAction,
-  resetDemoDataAction,
-  updateProfileAction,
-  updateReminderSettingsAction,
-} from "@/lib/actions/settings";
+import { resetDemoDataAction, updateProfileAction } from "@/lib/actions/settings";
 import { requireUser } from "@/lib/auth";
 import { store } from "@/lib/db/store";
 import type { CurrencyCode } from "@/lib/types";
@@ -43,19 +39,61 @@ const CURRENCIES: CurrencyCode[] = [
   "USD", "EUR", "GBP", "IDR", "SGD", "INR", "PHP", "AUD", "CAD", "MYR", "THB", "BRL", "MXN",
 ];
 
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
-
 const TIMEZONES = [
-  "America/Los_Angeles",
-  "America/New_York",
-  "Europe/London",
-  "Europe/Berlin",
-  "Asia/Jakarta",
-  "Asia/Singapore",
-  "Asia/Manila",
-  "Asia/Kolkata",
-  "Australia/Sydney",
   "UTC",
+  "Africa/Cairo",
+  "Africa/Johannesburg",
+  "Africa/Lagos",
+  "Africa/Nairobi",
+  "America/Anchorage",
+  "America/Argentina/Buenos_Aires",
+  "America/Bogota",
+  "America/Chicago",
+  "America/Denver",
+  "America/Halifax",
+  "America/Lima",
+  "America/Los_Angeles",
+  "America/Mexico_City",
+  "America/New_York",
+  "America/Phoenix",
+  "America/Santiago",
+  "America/Sao_Paulo",
+  "America/Toronto",
+  "America/Vancouver",
+  "Asia/Bangkok",
+  "Asia/Dhaka",
+  "Asia/Dubai",
+  "Asia/Ho_Chi_Minh",
+  "Asia/Hong_Kong",
+  "Asia/Jakarta",
+  "Asia/Karachi",
+  "Asia/Kathmandu",
+  "Asia/Kolkata",
+  "Asia/Kuala_Lumpur",
+  "Asia/Manila",
+  "Asia/Riyadh",
+  "Asia/Seoul",
+  "Asia/Shanghai",
+  "Asia/Singapore",
+  "Asia/Taipei",
+  "Asia/Tokyo",
+  "Australia/Adelaide",
+  "Australia/Brisbane",
+  "Australia/Perth",
+  "Australia/Sydney",
+  "Europe/Amsterdam",
+  "Europe/Berlin",
+  "Europe/Istanbul",
+  "Europe/Lisbon",
+  "Europe/London",
+  "Europe/Madrid",
+  "Europe/Moscow",
+  "Europe/Paris",
+  "Europe/Rome",
+  "Europe/Warsaw",
+  "Europe/Zurich",
+  "Pacific/Auckland",
+  "Pacific/Honolulu",
 ];
 
 export default async function SettingsPage({
@@ -84,21 +122,15 @@ export default async function SettingsPage({
       </div>
 
       {params.saved ? (
-        <Alert>
-          <UserRoundIcon />
-          <AlertTitle>Profile updated</AlertTitle>
-          <AlertDescription>Your changes are live.</AlertDescription>
-        </Alert>
-      ) : null}
-
-      {params.reminders ? (
-        <Alert>
-          <BellRingIcon />
-          <AlertTitle>Reminder settings saved</AlertTitle>
-          <AlertDescription>
-            Reminders created from now on will use your new time.
-          </AlertDescription>
-        </Alert>
+        <FlashAlert>
+          <Alert>
+            <UserRoundIcon />
+            <AlertTitle>Profile updated</AlertTitle>
+            <AlertDescription>
+              Your changes are live. Reminders created from now on use the new settings.
+            </AlertDescription>
+          </Alert>
+        </FlashAlert>
       ) : null}
 
       <Card>
@@ -227,49 +259,11 @@ export default async function SettingsPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={updateReminderSettingsAction} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5">
-              <div className="flex flex-col gap-0.5">
-                <FieldLabel htmlFor="remindersEnabled" className="font-normal">
-                  Email reminders
-                </FieldLabel>
-                <FieldDescription>
-                  Paused reminders stay scheduled, but nothing is sent.
-                </FieldDescription>
-              </div>
-              <Switch
-                id="remindersEnabled"
-                name="remindersEnabled"
-                defaultChecked={user.remindersEnabled !== false}
-              />
-            </div>
-
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <Field className="w-40">
-                <FieldLabel htmlFor="reminderHour">Send at</FieldLabel>
-                <Select name="reminderHour" defaultValue={String(user.reminderHour ?? 9)}>
-                  <SelectTrigger id="reminderHour" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {HOURS.map((hour) => (
-                        <SelectItem key={hour} value={String(hour)}>
-                          {String(hour).padStart(2, "0")}:00
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <SubmitButton pendingLabel="Saving…">Save reminders</SubmitButton>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Times use your timezone ({user.timezone}). The H-7, H-3, H-1 and H-0 schedule is
-              unchanged — only the hour of the day moves.
-            </p>
-          </form>
+          <ReminderSettingsForm
+            enabled={user.remindersEnabled !== false}
+            hour={user.reminderHour ?? 9}
+            timezone={user.timezone}
+          />
         </CardContent>
       </Card>
 
@@ -347,16 +341,7 @@ export default async function SettingsPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ActionButton
-            action={deleteAccountAction}
-            variant="destructive"
-            size="sm"
-            confirm="Delete your account and every bill, reminder and subscription? This cannot be undone."
-            pendingLabel="Deleting…"
-          >
-            <Trash2Icon data-icon="inline-start" />
-            Delete account and data
-          </ActionButton>
+          <DeleteAccountDialog email={user.email} />
           <p className="mt-2 text-xs text-muted-foreground">
             Prefer to keep looking? <Link href="/app" className="underline underline-offset-2">Back to dashboard</Link>.
           </p>

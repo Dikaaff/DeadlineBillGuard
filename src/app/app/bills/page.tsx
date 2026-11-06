@@ -38,7 +38,8 @@ import {
   dueLabel,
   formatDate,
   formatMoney,
-  formatMoneyWhole,
+  formatMoneyTotals,
+  sumByCurrency,
 } from "@/lib/format";
 import type { BillCategory, BillFilters, BillStatus } from "@/lib/types";
 import { cn } from "cn";
@@ -59,15 +60,19 @@ function queryHref(params: {
   category?: string;
   q?: string;
   sort?: string;
+  page?: number;
 }): string {
   const search = new URLSearchParams();
   if (params.status && params.status !== "all") search.set("status", params.status);
   if (params.category && params.category !== "all") search.set("category", params.category);
   if (params.q) search.set("q", params.q);
   if (params.sort && params.sort !== "due") search.set("sort", params.sort);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const value = search.toString();
   return value ? `/app/bills?${value}` : "/app/bills";
 }
+
+const PAGE_SIZE = 10;
 
 export default async function BillsPage({
   searchParams,
@@ -83,7 +88,16 @@ export default async function BillsPage({
 
   const bills = await store.listBills(user.id, { status, category, query: q, sort });
   const open = bills.filter((bill) => bill.status === "pending" || bill.status === "overdue");
-  const openTotal = open.reduce((sum, bill) => sum + bill.amountCents, 0);
+  const openTotals = sumByCurrency(open);
+
+  const requestedPage = Number(params.page);
+  const totalPages = Math.max(1, Math.ceil(bills.length / PAGE_SIZE));
+  const currentPage = Math.min(
+    Number.isFinite(requestedPage) && requestedPage >= 1 ? Math.trunc(requestedPage) : 1,
+    totalPages,
+  );
+  const pageBills = bills.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const hasFilters = status !== "all" || category !== "all" || q.length > 0;
 
   return (
     <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-5">
@@ -92,7 +106,7 @@ export default async function BillsPage({
           <h1 className="text-2xl font-semibold tracking-[-0.02em]">Bills</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {bills.length} bill{bills.length === 1 ? "" : "s"} ·{" "}
-            {formatMoneyWhole(openTotal)} still open
+            {formatMoneyTotals(openTotals, user.currency)} still open
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -163,6 +177,11 @@ export default async function BillsPage({
                 <Button type="submit" variant="outline" size="sm">
                   Filter
                 </Button>
+                {hasFilters ? (
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/app/bills">Clear</Link>
+                  </Button>
+                ) : null}
               </form>
             </div>
           </div>
@@ -205,10 +224,15 @@ export default async function BillsPage({
                 Try a different status or category, or add a bill by hand.
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>
+            <EmptyContent className="flex-row flex-wrap justify-center">
               <Button asChild>
                 <Link href="/app/bills/new">Add a bill</Link>
               </Button>
+              {hasFilters ? (
+                <Button asChild variant="outline">
+                  <Link href="/app/bills">Clear filters</Link>
+                </Button>
+              ) : null}
             </EmptyContent>
           </Empty>
         </Card>
@@ -226,10 +250,13 @@ export default async function BillsPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bills.map((bill) => (
-                  <TableRow key={bill.id} className="cursor-pointer">
+                {pageBills.map((bill) => (
+                  <TableRow key={bill.id} className="relative cursor-pointer transition-colors hover:bg-muted/50">
                     <TableCell className="pl-5">
-                      <Link href={`/app/bills/${bill.id}`} className="flex items-center gap-3">
+                      <Link
+                        href={`/app/bills/${bill.id}`}
+                        className="flex items-center gap-3 after:absolute after:inset-0 after:content-['']"
+                      >
                         <CategoryIcon category={bill.category} />
                         <span className="min-w-0">
                           <span className="flex items-center gap-1.5">
@@ -273,7 +300,7 @@ export default async function BillsPage({
           </div>
 
           <div className="flex flex-col divide-y divide-border md:hidden">
-            {bills.map((bill) => (
+            {pageBills.map((bill) => (
               <Link
                 key={bill.id}
                 href={`/app/bills/${bill.id}`}
@@ -297,6 +324,42 @@ export default async function BillsPage({
           </div>
         </Card>
       )}
+
+      {totalPages > 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+            {Math.min(currentPage * PAGE_SIZE, bills.length)} of {bills.length}
+          </p>
+          <div className="flex items-center gap-2">
+            {currentPage > 1 ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={queryHref({ status, category, q, sort, page: currentPage - 1 })}>
+                  Previous
+                </Link>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
+                Previous
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            {currentPage < totalPages ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={queryHref({ status, category, q, sort, page: currentPage + 1 })}>
+                  Next
+                </Link>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
+                Next
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

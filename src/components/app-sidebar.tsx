@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Inbox,
   LayoutDashboard,
+  Plus,
   Repeat2,
   ReceiptText,
   Settings2,
@@ -34,6 +35,8 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
+  /** Match the path exactly so /app/bills/new does not light up /app/bills too. */
+  exact?: boolean;
 }
 
 export function AppSidebar({
@@ -54,9 +57,18 @@ export function AppSidebar({
   const isActive = (href: string) =>
     href === "/app" ? pathname === "/app" : pathname.startsWith(href);
 
+  const isItemActive = (item: NavItem) => {
+    if (item.exact) return pathname === item.href;
+    if (item.href === "/app/bills") {
+      return pathname.startsWith("/app/bills") && pathname !== "/app/bills/new";
+    }
+    return isActive(item.href);
+  };
+
   const nav: NavItem[] = [
     { href: "/app", label: "Overview", icon: LayoutDashboard },
     { href: "/app/bills", label: "Bills", icon: ReceiptText, badge: pendingCount },
+    { href: "/app/bills/new", label: "Add bill", icon: Plus, exact: true },
     { href: "/app/subscriptions", label: "Subscriptions", icon: Repeat2, badge: subscriptionCount },
     { href: "/app/inbox", label: "Inbox", icon: Inbox },
   ];
@@ -80,16 +92,19 @@ export function AppSidebar({
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={isActive(item.href)}
+                    isActive={isItemActive(item)}
                     tooltip={item.label}
                     className={cn(
                       "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                       "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
                     )}
                   >
-                    <Link href={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={isItemActive(item) ? "page" : undefined}
+                    >
                       <item.icon
-                        className={cn(isActive(item.href) && "text-sidebar-primary")}
+                        className={cn(isItemActive(item) && "text-sidebar-primary")}
                       />
                       <span>{item.label}</span>
                     </Link>
@@ -116,7 +131,10 @@ export function AppSidebar({
                   tooltip="Settings"
                   className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
                 >
-                  <Link href="/app/settings">
+                  <Link
+                    href="/app/settings"
+                    aria-current={isActive("/app/settings") ? "page" : undefined}
+                  >
                     <Settings2
                       className={cn(isActive("/app/settings") && "text-sidebar-primary")}
                     />

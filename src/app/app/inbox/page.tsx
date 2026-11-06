@@ -41,9 +41,10 @@ const RESULT_STYLE: Record<string, string> = {
 
 export default async function InboxPage() {
   const user = await requireUser();
-  const [connection, ingests] = await Promise.all([
+  const [connection, ingests, ingestTotal] = await Promise.all([
     store.getConnection(user.id),
     store.listIngests(user.id, 30),
+    store.countIngests(user.id),
   ]);
 
   const needsReview = ingests.filter((ingest) => ingest.result === "uncertain" && ingest.payload);
@@ -184,7 +185,8 @@ export default async function InboxPage() {
         <div className="flex items-center justify-between border-b border-border/70 px-5 py-3">
           <p className="text-sm font-medium">Ingest log</p>
           <Badge variant="secondary" className="font-normal">
-            {ingests.length} events
+            {ingestTotal} event{ingestTotal === 1 ? "" : "s"}
+            {ingestTotal > ingests.length ? ` · latest ${ingests.length}` : ""}
           </Badge>
         </div>
         {ingests.length === 0 ? (
@@ -242,21 +244,37 @@ export default async function InboxPage() {
               </Table>
             </div>
             <div className="flex flex-col divide-y divide-border md:hidden">
-              {ingests.map((ingest) => (
-                <div key={ingest.id} className="flex items-start justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{ingest.subject}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {ingest.from} · {Math.round(ingest.confidence * 100)}%
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${RESULT_STYLE[ingest.result] ?? RESULT_STYLE.ignored}`}
+              {ingests.map((ingest) => {
+                const row = (
+                  <>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{ingest.subject}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {ingest.from} · {Math.round(ingest.confidence * 100)}%
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${RESULT_STYLE[ingest.result] ?? RESULT_STYLE.ignored}`}
+                    >
+                      {ingest.result}
+                    </span>
+                  </>
+                );
+
+                return ingest.billId ? (
+                  <Link
+                    key={ingest.id}
+                    href={`/app/bills/${ingest.billId}`}
+                    className="flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
                   >
-                    {ingest.result}
-                  </span>
-                </div>
-              ))}
+                    {row}
+                  </Link>
+                ) : (
+                  <div key={ingest.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                    {row}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

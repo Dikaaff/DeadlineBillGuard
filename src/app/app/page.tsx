@@ -6,6 +6,7 @@ import {
   CircleDollarSign,
   Clock3,
   Inbox as InboxIcon,
+  PlusIcon,
   Sparkles,
   TriangleAlert,
 } from "lucide-react";
@@ -23,7 +24,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
 import { startCheckoutAction } from "@/lib/actions/bills";
 import { requireUser } from "@/lib/auth";
@@ -34,7 +42,9 @@ import {
   formatDate,
   formatDateTime,
   formatMoney,
-  formatMoneyWhole,
+  formatMoneyTotals,
+  formatMonth,
+  formatWeekdayDate,
 } from "@/lib/format";
 
 export const metadata = { title: "Overview" };
@@ -48,17 +58,13 @@ export default async function DashboardPage() {
     .filter((bill) => bill.status !== "paid" && bill.status !== "cancelled")
     .slice(0, 6);
 
-  const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date());
+  const monthName = formatMonth(new Date(), user.timezone).split(" ")[0];
 
   return (
     <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6">
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">
-          {new Intl.DateTimeFormat("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          }).format(new Date())}
+          {formatWeekdayDate(new Date(), user.timezone)}
         </p>
         <h1 className="text-2xl font-semibold tracking-[-0.02em]">
           Welcome back, {user.name.split(" ")[0]}.
@@ -127,6 +133,17 @@ export default async function DashboardPage() {
                   Forward a bill to your inbox address and it will show up here within seconds.
                 </EmptyDescription>
               </EmptyHeader>
+              <EmptyContent>
+                <Button asChild>
+                  <Link href="/app/bills/new">
+                    <PlusIcon data-icon="inline-start" />
+                    Add a bill
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/app/inbox">Open inbox</Link>
+                </Button>
+              </EmptyContent>
             </Empty>
           </Card>
         )}
@@ -134,33 +151,33 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-4">
           <Stat
             label="Due in 7 days"
-            value={formatMoneyWhole(stats.dueSoonCents)}
+            value={formatMoneyTotals(stats.dueSoonTotals, user.currency)}
             hint={`${stats.dueSoonCount} bill${stats.dueSoonCount === 1 ? "" : "s"}`}
             icon={<Clock3 />}
           />
           <Stat
             label="Overdue"
-            value={formatMoneyWhole(stats.overdueCents)}
+            value={formatMoneyTotals(stats.overdueTotals, user.currency)}
             hint={`${stats.overdueCount} bill${stats.overdueCount === 1 ? "" : "s"}`}
             icon={<TriangleAlert />}
             tone={stats.overdueCount > 0 ? "danger" : "default"}
           />
           <Stat
             label={`Paid in ${monthName}`}
-            value={formatMoneyWhole(stats.paidThisMonthCents)}
-            hint={`${formatMoneyWhole(stats.monthTotalCents)} total due`}
+            value={formatMoneyTotals(stats.paidThisMonthTotals, user.currency)}
+            hint={`${formatMoneyTotals(stats.monthTotalTotals, user.currency)} total due`}
             icon={<CircleDollarSign />}
           />
           <Stat
             label="Subscriptions"
-            value={formatMoneyWhole(stats.subscriptionMonthlyCents)}
+            value={formatMoneyTotals(stats.subscriptionMonthlyTotals, user.currency)}
             hint="per month"
             icon={<BellRing />}
           />
         </div>
       </div>
 
-      <Runway days={data.runway} />
+      <Runway days={data.runway} currency={data.runwayCurrency} />
 
       <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
         <Card className="gap-0">
@@ -221,7 +238,8 @@ export default async function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="size-4 text-status-due" />
                   <CardTitle className="font-display text-xl">
-                    {formatMoneyWhole(stats.savingsYearlyCents)} a year is sitting idle
+                    {formatMoneyTotals(stats.savingsYearlyTotals, user.currency)} a year is sitting
+                    idle
                   </CardTitle>
                 </div>
                 <CardDescription>
@@ -315,6 +333,11 @@ export default async function DashboardPage() {
             </CardHeader>
             <Separator />
             <CardContent className="flex flex-col gap-3 pt-4">
+              {data.ingests.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No emails yet. Forward a bill to your forwarding address and it will appear here.
+                </p>
+              ) : null}
               {data.ingests.slice(0, 3).map((ingest) => (
                 <div key={ingest.id} className="flex items-start gap-2.5">
                   <InboxIcon className="mt-0.5 size-3.5 text-muted-foreground" />

@@ -36,24 +36,25 @@ export async function updateProfileAction(formData: FormData): Promise<void> {
   redirect("/app/settings?saved=1");
 }
 
-const reminderSchema = z.object({
-  reminderHour: z.coerce.number().int().min(0).max(23),
-  remindersEnabled: z.boolean().optional(),
+const reminderSettingsSchema = z.object({
+  reminderHour: z.number().int().min(0).max(23),
+  remindersEnabled: z.boolean(),
 });
 
-export async function updateReminderSettingsAction(formData: FormData): Promise<void> {
+/** Auto-saved from the settings switch/select, so no redirect and no flash message. */
+export async function saveReminderSettingsAction(input: {
+  reminderHour: number;
+  remindersEnabled: boolean;
+}): Promise<void> {
   const user = await requireUser();
-  const parsed = reminderSchema.parse({
-    reminderHour: formData.get("reminderHour") ?? 9,
-    remindersEnabled: formData.get("remindersEnabled") === "on",
-  });
+  const parsed = reminderSettingsSchema.parse(input);
   await store.updateUser(user.id, {
     reminderHour: parsed.reminderHour,
-    remindersEnabled: Boolean(parsed.remindersEnabled),
+    remindersEnabled: parsed.remindersEnabled,
   });
-  revalidatePath("/app/settings");
+  // Only the dashboard shows reminder state; revalidating /app/settings here would wipe the
+  // form's inline "Saved" indicator before the user sees it.
   revalidatePath("/app");
-  redirect("/app/settings?reminders=1");
 }
 
 export async function deleteAccountAction(): Promise<void> {
