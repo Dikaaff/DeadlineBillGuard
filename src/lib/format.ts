@@ -80,6 +80,51 @@ function toUTCParts(value: string): [number, number, number] {
   return [y, (m ?? 1) - 1, d ?? 1];
 }
 
+/** Offset of `timeZone` from UTC at `date`, in milliseconds (positive = east of UTC). */
+function timeZoneOffsetMs(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? 0);
+  const asUTC = Date.UTC(
+    value("year"),
+    value("month") - 1,
+    value("day"),
+    value("hour"),
+    value("minute"),
+    value("second"),
+  );
+  return asUTC - Math.floor(date.getTime() / 1000) * 1000;
+}
+
+/**
+ * Converts a calendar date plus a wall-clock hour in `timeZone` to a UTC ISO timestamp.
+ * Without a timezone the server's local time is used.
+ */
+export function zonedHourISO(dateISO: string, hour: number, timeZone?: string): string {
+  const [year, month, day] = toUTCParts(dateISO);
+  const clamped = Math.min(Math.max(Math.trunc(hour), 0), 23);
+  if (!timeZone) return new Date(year, month, day, clamped).toISOString();
+
+  try {
+    const wallClock = Date.UTC(year, month, day, clamped);
+    let utc = wallClock - timeZoneOffsetMs(new Date(wallClock), timeZone);
+    // Apply the offset a second time so DST transitions resolve to the offset in force.
+    utc = wallClock - timeZoneOffsetMs(new Date(utc), timeZone);
+    return new Date(utc).toISOString();
+  } catch {
+    return new Date(year, month, day, clamped).toISOString();
+  }
+}
+
 export function dueLabel(dueDate: string, status?: string): string {
   if (status === "paid") return "Paid";
   const diff = daysBetween(todayISO(), dueDate);
@@ -90,28 +135,62 @@ export function dueLabel(dueDate: string, status?: string): string {
   return `${Math.abs(diff)} days overdue`;
 }
 
-const DATE_FORMATTERS = {
-  short: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }),
-  long: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }),
-} as const;
+type DateStyle = "short" | "long";
 
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+const DATE_OPTIONS: Record<DateStyle, Intl.DateTimeFormatOptions> = {
+  short: { month: "short", day: "numeric" },
+  long: { month: "long", day: "numeric", year: "numeric" },
+};
+
+const DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
   month: "short",
   day: "numeric",
   hour: "numeric",
   minute: "2-digit",
-});
+};
 
-export function formatDate(value: string, style: "short" | "long" = "short"): string {
-  const date = parseISODate(value);
-  if (Number.isNaN(date.getTime())) return value || "—";
-  return DATE_FORMATTERS[style].format(date);
+const TIME_OPTIONS: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" };
+
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function formatter(options: Intl.DateTimeFormatOptions, timeZone?: string): Intl.DateTimeFormat {
+  const key = `${timeZone ?? ""}|${options.month}|${options.day}|${options.year ?? ""}|${options.hour ?? ""}`;
+  const cached = formatterCache.get(key);
+  if (cached) return cached;
+
+  let created: Intl.DateTimeFormat;
+  try {
+    created = new Intl.DateTimeFormat("en-US", timeZone ? { ...options, timeZone } : options);
+  } catch {
+    // Unknown IANA zone: fall back to the server default instead of throwing during render.
+    created = new Intl.DateTimeFormat("en-US", options);
+  }
+  formatterCache.set(key, created);
+  return created;
 }
 
-export function formatDateTime(value: string): string {
+/**
+ * Formats a due date or timestamp. Date-only values (`YYYY-MM-DD`) are calendar dates and are
+ * never shifted by a timezone; pass the user's zone for timestamps so days line up with them.
+ */
+export function formatDate(value: string, style: DateStyle = "short", timeZone?: string): string {
+  const date = parseISODate(value);
+  if (Number.isNaN(date.getTime())) return value || "—";
+  return formatter(DATE_OPTIONS[style], DATE_ONLY.test(value) ? undefined : timeZone).format(date);
+}
+
+export function formatTime(value: string, timeZone?: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return formatter(TIME_OPTIONS, timeZone).format(date);
+}
+
+export function formatDateTime(value: string, timeZone?: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value || "—";
-  return DATE_TIME_FORMATTER.format(date);
+  return formatter(DATE_TIME_OPTIONS, timeZone).format(date);
 }
 
 export function formatMonth(date = new Date()): string {

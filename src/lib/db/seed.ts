@@ -1,3 +1,4 @@
+import { zonedHourISO } from "@/lib/format";
 import type {
   Bill,
   BillCategory,
@@ -19,6 +20,7 @@ export function isoDate(offsetDays = 0, from = new Date()): string {
 const NOW = new Date().toISOString();
 
 export const DEMO_USER_ID = "usr_demo_0001";
+export const DEMO_TIMEZONE = "America/Los_Angeles";
 
 function bill(
   id: string,
@@ -208,12 +210,12 @@ function reminder(
   dueOffset: number,
   sent: boolean,
 ): Reminder {
-  const sendAt = new Date(`${isoDate(dueOffset - offsetDays)}T09:00:00`);
+  const sendAt = zonedHourISO(isoDate(dueOffset - offsetDays), 9, DEMO_TIMEZONE);
   return {
     id,
     billId,
     userId: DEMO_USER_ID,
-    sendAt: sendAt.toISOString(),
+    sendAt,
     offsetDays,
     channel: "email",
     sentAt: sent ? new Date().toISOString() : null,
@@ -236,7 +238,7 @@ const user: User = {
   email: "you@billguard.app",
   name: "Raka",
   currency: "USD",
-  timezone: "America/Los_Angeles",
+  timezone: DEMO_TIMEZONE,
   createdAt: NOW,
 };
 

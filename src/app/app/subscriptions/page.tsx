@@ -1,7 +1,7 @@
 import { PiggyBankIcon, Repeat2Icon, SparklesIcon } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { CategoryIcon } from "@/components/category-icon";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -34,23 +34,25 @@ function UsageControl({ subscription }: { subscription: Subscription }) {
       {USAGE_OPTIONS.map((option) => {
         const active = subscription.usageStatus === option.value;
         return (
-          <form key={option.value} action={setUsageAction.bind(null, subscription.id, option.value)}>
-            <Button
-              type="submit"
-              size="sm"
-              variant="ghost"
-              className={cn(
-                "h-6 rounded px-2 text-[11px] font-medium",
-                active
-                  ? option.value === "unused"
-                    ? "bg-destructive/10 text-destructive hover:bg-destructive/15"
-                    : "bg-primary/10 text-primary hover:bg-primary/15"
-                  : "text-muted-foreground",
-              )}
-            >
-              {option.label}
-            </Button>
-          </form>
+          <ActionButton
+            key={option.value}
+            action={setUsageAction.bind(null, subscription.id, option.value)}
+            size="sm"
+            variant="ghost"
+            disabled={active}
+            aria-pressed={active}
+            success={`${subscription.merchant} marked ${option.label.toLowerCase()}`}
+            className={cn(
+              "h-6 rounded px-2 text-[11px] font-medium",
+              active
+                ? option.value === "unused"
+                  ? "bg-destructive/10 text-destructive hover:bg-destructive/15"
+                  : "bg-primary/10 text-primary hover:bg-primary/15"
+                : "text-muted-foreground",
+            )}
+          >
+            {option.label}
+          </ActionButton>
         );
       })}
     </div>

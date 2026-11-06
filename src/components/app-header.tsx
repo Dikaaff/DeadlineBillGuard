@@ -44,9 +44,13 @@ const TITLES: Array<{ match: (path: string) => boolean; title: string }> = [
 export function AppHeader({
   user,
   reminders,
+  remindersEnabled,
+  reminderHour,
 }: {
   user: { name: string; email: string; initials: string };
   reminders: HeaderReminder[];
+  remindersEnabled: boolean;
+  reminderHour: number;
 }) {
   const pathname = usePathname();
   const title = TITLES.find((item) => item.match(pathname))?.title ?? "Overview";
@@ -79,12 +83,16 @@ export function AppHeader({
           <PopoverContent align="end" className="w-80 p-0">
             <div className="flex items-center justify-between px-4 py-3">
               <p className="text-sm font-medium">Reminders</p>
-              <span className="text-xs text-muted-foreground">{reminders.length} upcoming</span>
+              <span className="text-xs text-muted-foreground">
+                {remindersEnabled ? `${reminders.length} upcoming` : "Paused"}
+              </span>
             </div>
             <Separator />
             {reminders.length === 0 ? (
               <p className="px-4 py-6 text-sm text-muted-foreground">
-                Nothing scheduled. We will nudge you 7, 3 and 1 day before each bill.
+                {remindersEnabled
+                  ? `Nothing scheduled. We email at ${String(reminderHour).padStart(2, "0")}:00, seven, three, one and zero days before each due date.`
+                  : "Reminders are paused in Settings, so nothing will be emailed until you turn them back on."}
               </p>
             ) : (
               <ul className="flex flex-col p-1.5">

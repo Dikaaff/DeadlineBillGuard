@@ -15,6 +15,7 @@ import type {
   UsageStatus,
   User,
 } from "@/lib/types";
+import { addDaysISO, zonedHourISO } from "@/lib/format";
 import { createSeedDatabase, isoDate } from "./seed";
 
 const DATA_DIR = process.env.DBG_DATA_DIR ?? path.join(process.cwd(), ".data");
@@ -127,7 +128,9 @@ export const store = {
 
   async updateUser(
     id: string,
-    patch: Partial<Pick<User, "name" | "currency" | "timezone">>,
+    patch: Partial<
+      Pick<User, "name" | "currency" | "timezone" | "reminderHour" | "remindersEnabled">
+    >,
   ): Promise<User | null> {
     return mutate((db) => {
       const user = db.users.find((u) => u.id === id);
@@ -306,18 +309,19 @@ export const store = {
   ): Promise<void> {
     if (bill.status !== "pending") return;
     await mutate((db) => {
+      const user = db.users.find((u) => u.id === userId);
+      const hour = user?.reminderHour ?? 9;
       for (const offset of [7, 3, 1, 0] as const) {
         const exists = db.reminders.some(
           (r) => r.billId === bill.id && r.offsetDays === offset,
         );
         if (exists) continue;
-        const due = new Date(`${bill.dueDate}T09:00:00`);
-        due.setDate(due.getDate() - offset);
+        const sendAt = zonedHourISO(addDaysISO(bill.dueDate, -offset), hour, user?.timezone);
         db.reminders.push({
           id: `rem_${randomUUID()}`,
           billId: bill.id,
           userId,
-          sendAt: due.toISOString(),
+          sendAt,
           offsetDays: offset,
           channel: "email",
           sentAt: null,

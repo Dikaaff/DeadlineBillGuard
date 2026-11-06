@@ -4,7 +4,11 @@ import { runReminderJob } from "@/lib/reminders";
 
 function authorised(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) {
+    // In production, deny if no secret is configured.
+    // In development, allow open access for convenience.
+    return process.env.NODE_ENV !== "production";
+  }
   const url = new URL(request.url);
   const provided =
     url.searchParams.get("secret") ??

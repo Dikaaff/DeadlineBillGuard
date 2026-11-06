@@ -11,6 +11,11 @@ export async function POST(request: Request) {
     if (provided !== secret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+  } else if (process.env.NODE_ENV === "production") {
+    // Deny all inbound email in production when no secret is configured
+    // to prevent arbitrary bill injection.
+    console.error("[inbound-email] INBOUND_EMAIL_SECRET is not set — rejecting request");
+    return NextResponse.json({ error: "Endpoint not configured" }, { status: 503 });
   }
 
   const contentType = request.headers.get("content-type") ?? "";

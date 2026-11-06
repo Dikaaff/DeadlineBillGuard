@@ -141,7 +141,12 @@ export async function startCheckoutAction(billId: string): Promise<void> {
   if (!bill) redirect("/app/bills");
   if (bill.status === "paid") redirect(`/app/bills/${bill.id}?paypal=already-paid`);
 
-  const order = await createPaypalOrder(bill, { appUrl: appUrl() });
+  let order;
+  try {
+    order = await createPaypalOrder(bill, { appUrl: appUrl() });
+  } catch {
+    redirect(`/app/bills/${bill.id}?paypal=error`);
+  }
   await store.setPaypalOrder(user.id, bill.id, order.id);
   await store.logPaypalEvent({
     eventId: `create-${order.id}`,
@@ -157,7 +162,12 @@ export async function approveCheckoutAction(orderId: string): Promise<void> {
   const bill = await store.findBillByPaypalOrderId(orderId);
   if (!bill || bill.userId !== user.id) redirect("/app/bills");
 
-  const capture = await capturePaypalOrder(orderId);
+  let capture;
+  try {
+    capture = await capturePaypalOrder(orderId);
+  } catch {
+    redirect(`/app/bills/${bill.id}?paypal=failed`);
+  }
   await store.markBillPaid(user.id, bill.id, capture.captureId, orderId);
   await store.logPaypalEvent({
     eventId: `capture-${capture.captureId}`,

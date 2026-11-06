@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRightIcon, CheckIcon, MailIcon, SparklesIcon, XIcon } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { CopyButton } from "@/components/copy-button";
 import { IngestForm } from "@/components/ingest-form";
 import { Badge } from "@/components/ui/badge";
@@ -82,7 +83,7 @@ export default async function InboxPage() {
               </span>
               <span>
                 {connection?.lastSyncAt
-                  ? `Last email ${formatDateTime(connection.lastSyncAt)}`
+                  ? `Last email ${formatDateTime(connection.lastSyncAt, user.timezone)}`
                   : "No email received yet"}
               </span>
             </div>
@@ -93,12 +94,17 @@ export default async function InboxPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {SAMPLE_EMAILS.map((sample) => (
-                  <form key={sample.id} action={ingestSampleAction.bind(null, sample.id)}>
-                    <Button type="submit" variant="outline" size="sm">
-                      <SparklesIcon data-icon="inline-start" />
-                      {sample.label}
-                    </Button>
-                  </form>
+                  <ActionButton
+                    key={sample.id}
+                    action={ingestSampleAction.bind(null, sample.id)}
+                    variant="outline"
+                    size="sm"
+                    pendingLabel="Parsing…"
+                    success="Sample parsed — check the ingest log below"
+                  >
+                    <SparklesIcon data-icon="inline-start" />
+                    {sample.label}
+                  </ActionButton>
                 ))}
               </div>
             </div>
@@ -148,18 +154,24 @@ export default async function InboxPage() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <form action={confirmIngestAction.bind(null, ingest.id)}>
-                      <Button type="submit" size="sm">
-                        <CheckIcon data-icon="inline-start" />
-                        Add bill
-                      </Button>
-                    </form>
-                    <form action={discardIngestAction.bind(null, ingest.id)}>
-                      <Button type="submit" size="sm" variant="ghost">
-                        <XIcon data-icon="inline-start" />
-                        Discard
-                      </Button>
-                    </form>
+                    <ActionButton
+                      action={confirmIngestAction.bind(null, ingest.id)}
+                      size="sm"
+                      pendingLabel="Adding…"
+                    >
+                      <CheckIcon data-icon="inline-start" />
+                      Add bill
+                    </ActionButton>
+                    <ActionButton
+                      action={discardIngestAction.bind(null, ingest.id)}
+                      size="sm"
+                      variant="ghost"
+                      pendingLabel="Discarding…"
+                      success="Email discarded"
+                    >
+                      <XIcon data-icon="inline-start" />
+                      Discard
+                    </ActionButton>
                   </div>
                 </div>
               );
@@ -200,7 +212,7 @@ export default async function InboxPage() {
                         <p className="truncate text-xs text-muted-foreground">{ingest.from}</p>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {formatDateTime(ingest.receivedAt)}
+                        {formatDateTime(ingest.receivedAt, user.timezone)}
                       </TableCell>
                       <TableCell className="tabular text-xs">
                         {Math.round(ingest.confidence * 100)}%

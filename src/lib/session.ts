@@ -11,7 +11,14 @@ export interface SessionPayload {
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 function secret(): string {
-  return process.env.AUTH_SECRET ?? "bill-guard-dev-secret-change-in-production";
+  const s = process.env.AUTH_SECRET;
+  if (!s) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET environment variable is required in production");
+    }
+    return "bill-guard-dev-secret-change-in-production";
+  }
+  return s;
 }
 
 function sign(value: string): string {

@@ -23,6 +23,10 @@ export interface User {
   name: string;
   currency: CurrencyCode;
   timezone: string;
+  /** Local hour (0-23) reminder emails go out. Defaults to 9. */
+  reminderHour?: number;
+  /** Paused reminders stay scheduled but nothing is sent. Defaults to true. */
+  remindersEnabled?: boolean;
   createdAt: string;
 }
 

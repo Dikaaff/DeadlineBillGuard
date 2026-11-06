@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  AlertTriangleIcon,
   ArrowLeftIcon,
   BellRingIcon,
   CheckCircle2Icon,
@@ -10,6 +11,7 @@ import {
   RefreshCwIcon,
   Trash2Icon,
 } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { BillStatusBadge } from "@/components/bill-status-badge";
 import { CategoryIcon } from "@/components/category-icon";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,6 +35,7 @@ import {
   formatDateTime,
   formatMoney,
   formatMoneyWhole,
+  formatTime,
 } from "@/lib/format";
 
 export const metadata = { title: "Bill" };
@@ -67,9 +70,15 @@ export default async function BillDetailPage({
       ? { tone: "success" as const, title: "Payment captured", body: "PayPal confirmed the payment and the bill is marked paid." }
       : query.paypal === "already-paid"
         ? { tone: "muted" as const, title: "Already paid", body: "This bill was captured earlier — no second charge was made." }
-        : query.saved
-          ? { tone: "muted" as const, title: "Changes saved", body: "Reminders were recalculated from the new due date." }
-          : null;
+        : query.paypal === "failed"
+          ? { tone: "error" as const, title: "Payment not captured", body: "PayPal did not confirm the payment, so the bill is still open. Try again — you were not charged twice." }
+          : query.paypal === "cancelled"
+            ? { tone: "muted" as const, title: "Payment cancelled", body: "You stopped at PayPal. The bill is still open and no money moved." }
+            : query.paypal === "error"
+              ? { tone: "error" as const, title: "Could not start PayPal", body: "We could not reach PayPal to create the order. Check your connection and try again." }
+              : query.saved
+                ? { tone: "muted" as const, title: "Changes saved", body: "Reminders were recalculated from the new due date." }
+                : null;
 
   return (
     <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-5">
@@ -108,8 +117,8 @@ export default async function BillDetailPage({
       </div>
 
       {flash ? (
-        <Alert>
-          <CheckCircle2Icon />
+        <Alert variant={flash.tone === "error" ? "destructive" : "default"}>
+          {flash.tone === "error" ? <AlertTriangleIcon /> : <CheckCircle2Icon />}
           <AlertTitle>{flash.title}</AlertTitle>
           <AlertDescription>{flash.body}</AlertDescription>
         </Alert>
@@ -136,33 +145,44 @@ export default async function BillDetailPage({
             <CardContent className="flex flex-col gap-4 pt-6">
               {!isPaid ? (
                 <div className="flex flex-wrap gap-2">
-                  <form action={startCheckoutAction.bind(null, bill.id)}>
-                    <Button type="submit" className="bg-[#0070ba] text-white hover:bg-[#005ea6]">
-                      <CircleDollarSignIcon data-icon="inline-start" />
-                      Pay {formatMoneyWhole(bill.amountCents, bill.currency)} with PayPal
-                    </Button>
-                  </form>
-                  <form action={markPaidManuallyAction.bind(null, bill.id)}>
-                    <Button type="submit" variant="outline">
-                      <CheckCircle2Icon data-icon="inline-start" />
-                      Mark as paid
-                    </Button>
-                  </form>
+                  <ActionButton
+                    action={startCheckoutAction.bind(null, bill.id)}
+                    className="bg-[#0070ba] text-white hover:bg-[#005ea6]"
+                    pendingLabel="Opening PayPal…"
+                  >
+                    <CircleDollarSignIcon data-icon="inline-start" />
+                    Pay {formatMoneyWhole(bill.amountCents, bill.currency)} with PayPal
+                  </ActionButton>
+                  <ActionButton
+                    action={markPaidManuallyAction.bind(null, bill.id)}
+                    variant="outline"
+                    success="Marked as paid"
+                    pendingLabel="Saving…"
+                  >
+                    <CheckCircle2Icon data-icon="inline-start" />
+                    Mark as paid
+                  </ActionButton>
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[color:var(--status-paid-border)] bg-[color:var(--status-paid-surface)] px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium">Paid {bill.paidAt ? formatDateTime(bill.paidAt) : ""}</p>
+                    <p className="text-sm font-medium">
+                      Paid {bill.paidAt ? formatDateTime(bill.paidAt, user.timezone) : ""}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Capture {bill.paypalCaptureId ?? "manual"} · order {bill.paypalOrderId ?? "n/a"}
                     </p>
                   </div>
-                  <form action={reopenBillAction.bind(null, bill.id)}>
-                    <Button type="submit" variant="outline" size="sm">
-                      <RefreshCwIcon data-icon="inline-start" />
-                      Reopen
-                    </Button>
-                  </form>
+                  <ActionButton
+                    action={reopenBillAction.bind(null, bill.id)}
+                    variant="outline"
+                    size="sm"
+                    success="Bill reopened"
+                    pendingLabel="Reopening…"
+                  >
+                    <RefreshCwIcon data-icon="inline-start" />
+                    Reopen
+                  </ActionButton>
                 </div>
               )}
 
@@ -190,7 +210,7 @@ export default async function BillDetailPage({
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Added</dt>
-                  <dd className="mt-0.5">{formatDateTime(bill.createdAt)}</dd>
+                  <dd className="mt-0.5">{formatDateTime(bill.createdAt, user.timezone)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Extraction confidence</dt>
@@ -199,12 +219,17 @@ export default async function BillDetailPage({
               </dl>
 
               <div className="flex justify-end border-t border-border/60 pt-3">
-                <form action={deleteBillAction.bind(null, bill.id)}>
-                  <Button type="submit" variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                    <Trash2Icon data-icon="inline-start" />
-                    Delete bill
-                  </Button>
-                </form>
+                <ActionButton
+                  action={deleteBillAction.bind(null, bill.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  confirm={`Delete the ${bill.merchant} bill? This cannot be undone.`}
+                  pendingLabel="Deleting…"
+                >
+                  <Trash2Icon data-icon="inline-start" />
+                  Delete bill
+                </ActionButton>
               </div>
             </CardContent>
           </Card>
@@ -253,7 +278,7 @@ export default async function BillDetailPage({
                     <div className="pb-4">
                       <p className="font-mono text-xs font-medium">{event.eventType}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDateTime(event.receivedAt)} · {event.eventId}
+                        {formatDateTime(event.receivedAt, user.timezone)} · {event.eventId}
                       </p>
                     </div>
                   </div>
@@ -293,8 +318,11 @@ export default async function BillDetailPage({
                     <div className="pb-4">
                       <p className="text-sm font-medium">{OFFSET_LABEL[reminder.offsetDays]}</p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(reminder.sendAt, "long")} ·{" "}
-                        {reminder.sentAt ? `sent ${formatDateTime(reminder.sentAt)}` : "scheduled"}
+                        {formatDate(reminder.sendAt, "long", user.timezone)} at{" "}
+                        {formatTime(reminder.sendAt, user.timezone)} ·{" "}
+                        {reminder.sentAt
+                          ? `sent ${formatDateTime(reminder.sentAt, user.timezone)}`
+                          : "scheduled"}
                       </p>
                     </div>
                   </div>

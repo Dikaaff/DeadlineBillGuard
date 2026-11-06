@@ -9,6 +9,7 @@ import {
   Sparkles,
   TriangleAlert,
 } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { BillStatusBadge } from "@/components/bill-status-badge";
 import { CategoryIcon } from "@/components/category-icon";
 import { Runway } from "@/components/runway";
@@ -93,15 +94,14 @@ export default async function DashboardPage() {
                 {formatMoney(nextBill.amountCents, nextBill.currency)}
               </p>
               <div className="flex items-center gap-2">
-                <form action={startCheckoutAction.bind(null, nextBill.id)}>
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    className="bg-white text-panel hover:bg-white/90"
-                  >
-                    Pay with PayPal
-                  </Button>
-                </form>
+                <ActionButton
+                  action={startCheckoutAction.bind(null, nextBill.id)}
+                  variant="secondary"
+                  className="bg-white text-panel hover:bg-white/90"
+                  pendingLabel="Opening PayPal…"
+                >
+                  Pay with PayPal
+                </ActionButton>
                 <Button
                   asChild
                   variant="ghost"
@@ -255,8 +255,19 @@ export default async function DashboardPage() {
 
           <Card className="gap-0">
             <CardHeader className="pb-3">
-              <CardTitle>Reminders queued</CardTitle>
-              <CardDescription>Email at 9:00 on each scheduled day.</CardDescription>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <CardTitle>Reminders queued</CardTitle>
+                  <CardDescription>
+                    {user.remindersEnabled === false
+                      ? "Paused in Settings — nothing is sent until you turn them back on."
+                      : `Email at ${String(user.reminderHour ?? 9).padStart(2, "0")}:00 on each scheduled day.`}
+                  </CardDescription>
+                </div>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/app/settings">Manage</Link>
+                </Button>
+              </div>
             </CardHeader>
             <Separator />
             <CardContent className="flex flex-col gap-3 pt-4">
@@ -277,7 +288,7 @@ export default async function DashboardPage() {
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{bill.merchant}</span>
                         <span className="text-xs text-muted-foreground">
-                          H-{reminder.offsetDays} · {formatDateTime(reminder.sendAt)}
+                          H-{reminder.offsetDays} · {formatDateTime(reminder.sendAt, user.timezone)}
                         </span>
                       </span>
                       <span className="tabular text-xs text-muted-foreground">

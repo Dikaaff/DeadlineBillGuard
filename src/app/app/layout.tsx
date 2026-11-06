@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { requireUser } from "@/lib/auth";
 import { store } from "@/lib/db/store";
-import { dueLabel, formatMoney, initials } from "@/lib/format";
+import { dueLabel, formatDateTime, formatMoney, initials } from "@/lib/format";
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
   const user = await requireUser();
@@ -28,11 +28,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
       billId: bill.id,
       merchant: bill.merchant,
       amount: formatMoney(bill.amountCents, bill.currency),
-      when: new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-      }).format(new Date(reminder.sendAt)),
+      when: formatDateTime(reminder.sendAt, user.timezone),
       due: dueLabel(bill.dueDate, bill.status),
     });
   }
@@ -50,6 +46,8 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
         <AppHeader
           user={{ name: user.name, email: user.email, initials: initials(user.name) }}
           reminders={headerReminders}
+          remindersEnabled={user.remindersEnabled !== false}
+          reminderHour={user.reminderHour ?? 9}
         />
         <div className="flex-1 px-4 pb-10 pt-6 md:px-8 md:pt-8">{children}</div>
       </SidebarInset>

@@ -46,6 +46,12 @@ export async function runReminderJob(appUrl: string): Promise<ReminderRunSummary
       continue;
     }
 
+    if (user.remindersEnabled === false) {
+      await store.markReminderSent(reminder.id);
+      summary.skipped += 1;
+      continue;
+    }
+
     const deliverable =
       Boolean(process.env.RESEND_API_KEY) && !user.email.endsWith("@billguard.app");
 

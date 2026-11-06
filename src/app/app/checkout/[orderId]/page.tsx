@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeftIcon, LockIcon, ShieldCheckIcon } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { approveCheckoutAction } from "@/lib/actions/bills";
@@ -71,15 +72,14 @@ export default async function CheckoutPage({ params }: { params: Promise<{ order
             </Alert>
           ) : null}
 
-          <form action={approveCheckoutAction.bind(null, orderId)}>
-            <Button
-              type="submit"
-              className="w-full bg-[#0070ba] text-white hover:bg-[#005ea6]"
-              size="lg"
-            >
-              Approve payment of {formatMoney(total, bill.currency)}
-            </Button>
-          </form>
+          <ActionButton
+            action={approveCheckoutAction.bind(null, orderId)}
+            className="w-full bg-[#0070ba] text-white hover:bg-[#005ea6]"
+            size="lg"
+            pendingLabel="Capturing payment…"
+          >
+            Approve payment of {formatMoney(total, bill.currency)}
+          </ActionButton>
           <p className="text-center text-xs text-muted-foreground">
             Cancel and you will return to the bill. Nothing is charged until you approve.
           </p>

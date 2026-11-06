@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  BellRingIcon,
   DownloadIcon,
   KeyRoundIcon,
   RefreshCcwIcon,
@@ -7,7 +8,9 @@ import {
   Trash2Icon,
   UserRoundIcon,
 } from "lucide-react";
+import { ActionButton } from "@/components/action-button";
 import { CopyButton } from "@/components/copy-button";
+import { SubmitButton } from "@/components/submit-button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,10 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   deleteAccountAction,
   resetDemoDataAction,
   updateProfileAction,
+  updateReminderSettingsAction,
 } from "@/lib/actions/settings";
 import { requireUser } from "@/lib/auth";
 import { store } from "@/lib/db/store";
@@ -37,6 +42,8 @@ export const metadata = { title: "Settings" };
 const CURRENCIES: CurrencyCode[] = [
   "USD", "EUR", "GBP", "IDR", "SGD", "INR", "PHP", "AUD", "CAD", "MYR", "THB", "BRL", "MXN",
 ];
+
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 const TIMEZONES = [
   "America/Los_Angeles",
@@ -81,6 +88,16 @@ export default async function SettingsPage({
           <UserRoundIcon />
           <AlertTitle>Profile updated</AlertTitle>
           <AlertDescription>Your changes are live.</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {params.reminders ? (
+        <Alert>
+          <BellRingIcon />
+          <AlertTitle>Reminder settings saved</AlertTitle>
+          <AlertDescription>
+            Reminders created from now on will use your new time.
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -144,7 +161,7 @@ export default async function SettingsPage({
               </div>
             </FieldGroup>
             <div>
-              <Button type="submit">Save profile</Button>
+              <SubmitButton pendingLabel="Saving…">Save profile</SubmitButton>
             </div>
           </form>
         </CardContent>
@@ -201,8 +218,65 @@ export default async function SettingsPage({
 
       <Card>
         <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BellRingIcon className="size-4 text-muted-foreground" />
+            Reminders
+          </CardTitle>
+          <CardDescription>
+            When we email you before a due date, and whether we email at all.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={updateReminderSettingsAction} className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5">
+              <div className="flex flex-col gap-0.5">
+                <FieldLabel htmlFor="remindersEnabled" className="font-normal">
+                  Email reminders
+                </FieldLabel>
+                <FieldDescription>
+                  Paused reminders stay scheduled, but nothing is sent.
+                </FieldDescription>
+              </div>
+              <Switch
+                id="remindersEnabled"
+                name="remindersEnabled"
+                defaultChecked={user.remindersEnabled !== false}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <Field className="w-40">
+                <FieldLabel htmlFor="reminderHour">Send at</FieldLabel>
+                <Select name="reminderHour" defaultValue={String(user.reminderHour ?? 9)}>
+                  <SelectTrigger id="reminderHour" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {HOURS.map((hour) => (
+                        <SelectItem key={hour} value={String(hour)}>
+                          {String(hour).padStart(2, "0")}:00
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <SubmitButton pendingLabel="Saving…">Save reminders</SubmitButton>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Times use your timezone ({user.timezone}). The H-7, H-3, H-1 and H-0 schedule is
+              unchanged — only the hour of the day moves.
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Reminder cadence</CardTitle>
-          <CardDescription>Fixed for now — four touches before every due date.</CardDescription>
+          <CardDescription>Four touches before every due date.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           {[
@@ -248,12 +322,16 @@ export default async function SettingsPage({
                 Restores the seeded bills and subscriptions. Your session stays valid.
               </p>
             </div>
-            <form action={resetDemoDataAction}>
-              <Button type="submit" variant="outline" size="sm">
-                <RefreshCcwIcon data-icon="inline-start" />
-                Reset demo
-              </Button>
-            </form>
+            <ActionButton
+              action={resetDemoDataAction}
+              variant="outline"
+              size="sm"
+              confirm="Reset demo data? Your bills and subscriptions go back to the seeded demo set."
+              pendingLabel="Resetting…"
+            >
+              <RefreshCcwIcon data-icon="inline-start" />
+              Reset demo
+            </ActionButton>
           </div>
         </CardContent>
       </Card>
@@ -269,12 +347,16 @@ export default async function SettingsPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={deleteAccountAction}>
-            <Button type="submit" variant="destructive" size="sm">
-              <Trash2Icon data-icon="inline-start" />
-              Delete account and data
-            </Button>
-          </form>
+          <ActionButton
+            action={deleteAccountAction}
+            variant="destructive"
+            size="sm"
+            confirm="Delete your account and every bill, reminder and subscription? This cannot be undone."
+            pendingLabel="Deleting…"
+          >
+            <Trash2Icon data-icon="inline-start" />
+            Delete account and data
+          </ActionButton>
           <p className="mt-2 text-xs text-muted-foreground">
             Prefer to keep looking? <Link href="/app" className="underline underline-offset-2">Back to dashboard</Link>.
           </p>
