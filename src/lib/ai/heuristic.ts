@@ -295,7 +295,7 @@ function normalizeYear(year: number | undefined, month: number, day: number): st
   return iso;
 }
 
-function findDueDate(text: string): string | null {
+function parseDateIn(text: string): string | null {
   const isoMatch = text.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
   if (isoMatch) {
     const iso = buildDate(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
@@ -350,6 +350,17 @@ function findDueDate(text: string): string | null {
   if (/\bdue today\b/i.test(text)) return todayISO();
 
   return null;
+}
+
+function findDueDate(text: string): string | null {
+  const cuePattern = /(?:payment\s+due(?:\s+date)?|due\s+(?:date|by|on)|pay\s+by|due\b)/gi;
+  let cue: RegExpExecArray | null;
+  while ((cue = cuePattern.exec(text)) !== null) {
+    const window = text.slice(cue.index, cue.index + 90);
+    const fromCue = parseDateIn(window);
+    if (fromCue) return fromCue;
+  }
+  return parseDateIn(text);
 }
 
 function detectCategory(text: string, knownCategory?: BillCategory): BillCategory {

@@ -14,11 +14,11 @@ export const SAMPLE_EMAILS: SampleEmail[] = [
     subject: "Your PG&E statement is ready",
     text: `Hi Raka,
 
-Your Pacific Gas & Electric statement for the period Sep 20 - Oct 19 is ready.
+Your Pacific Gas & Electric statement for the period Oct 20 - Nov 19 is ready.
 
 Account number: 4412-8891
 Amount due: $142.86
-Payment due date: November 6, 2026
+Payment due date: November 20, 2026
 
 Pay by the due date to avoid a late fee of $12.00. Autopay is not enabled on this account.
 

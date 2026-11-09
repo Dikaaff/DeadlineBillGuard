@@ -176,7 +176,7 @@ export default function LandingPage() {
                 <div className="flex items-start justify-between border-b border-dashed border-border pb-4">
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                      Statement · Oct 2026
+                      Statement · Nov 2026
                     </p>
                     <p className="mt-1 text-sm font-medium">Pacific Gas &amp; Electric</p>
                   </div>
@@ -186,7 +186,7 @@ export default function LandingPage() {
                   <p className="text-xs text-muted-foreground">Amount due</p>
                   <p className="tabular font-display text-6xl leading-none tracking-tight">$142.86</p>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Due <span className="font-medium text-foreground">Nov 6, 2026</span> · Account
+                    Due <span className="font-medium text-foreground">Nov 20, 2026</span> · Account
                     4412-8891
                   </p>
                 </div>
@@ -276,7 +276,7 @@ Subject: Your PG&E statement is ready
 
 Your statement is ready.
 Amount due: $142.86
-Payment due date: November 6, 2026
+Payment due date: November 20, 2026
 Account number: 4412-8891`}
                 </pre>
               </div>
@@ -294,7 +294,7 @@ Account number: 4412-8891`}
   "merchant": "PG&E",
   "amount_cents": 14286,
   "currency": "USD",
-  "due_date": "2026-11-06",
+  "due_date": "2026-11-20",
   "invoice_id": "4412-8891",
   "category": "utilities",
   "is_subscription": false

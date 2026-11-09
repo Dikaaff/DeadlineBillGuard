@@ -5,6 +5,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
+function isNavigationError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("digest" in error)) return false;
+  const digest = (error as { digest?: unknown }).digest;
+  return typeof digest === "string" && /^NEXT_(REDIRECT|HTTP_ERROR_FALLBACK)/.test(digest);
+}
+
 type ActionButtonProps = React.ComponentProps<typeof Button> & {
   /** Server action to run, usually bound with its target id. */
   action: () => Promise<void>;
@@ -41,7 +47,8 @@ export function ActionButton({
           try {
             await action();
             if (success) toast.success(success);
-          } catch {
+          } catch (error) {
+            if (isNavigationError(error)) return;
             toast.error("That did not go through. Please try again.");
           }
         });

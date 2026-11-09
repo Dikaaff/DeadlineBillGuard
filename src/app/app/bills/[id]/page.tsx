@@ -306,9 +306,11 @@ export default async function BillDetailPage({
                     <div className="flex flex-col items-center">
                       <span
                         className={
-                          reminder.sentAt
-                            ? "mt-1.5 size-2.5 rounded-full bg-primary"
-                            : "mt-1.5 size-2.5 rounded-full border-2 border-muted-foreground/40"
+                          bill.status === "paid"
+                            ? "mt-1.5 size-2.5 rounded-full bg-muted-foreground/30"
+                            : reminder.sentAt
+                              ? "mt-1.5 size-2.5 rounded-full bg-primary"
+                              : "mt-1.5 size-2.5 rounded-full border-2 border-muted-foreground/40"
                         }
                       />
                       {index < reminders.length - 1 ? (
@@ -320,9 +322,11 @@ export default async function BillDetailPage({
                       <p className="text-xs text-muted-foreground">
                         {formatDate(reminder.sendAt, "long", user.timezone)} at{" "}
                         {formatTime(reminder.sendAt, user.timezone)} ·{" "}
-                        {reminder.sentAt
-                          ? `sent ${formatDateTime(reminder.sentAt, user.timezone)}`
-                          : "scheduled"}
+                        {bill.status === "paid"
+                          ? "canceled"
+                          : reminder.sentAt
+                            ? `sent ${formatDateTime(reminder.sentAt, user.timezone)}`
+                            : "scheduled"}
                       </p>
                     </div>
                   </div>
