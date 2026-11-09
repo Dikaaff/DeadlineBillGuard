@@ -42,6 +42,11 @@ yarn-error.log*
 /.data/
 dbg-tok.txt
 
+# demo video render artifacts
+/demo/work/
+/demo/out/
+/scripts/demo/probe*.mjs
+
 # vercel
 .vercel
 

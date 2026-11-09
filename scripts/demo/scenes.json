@@ -1,0 +1,182 @@
+{
+  "duration": 175,
+  "recordDuration": 165,
+  "endCardStart": 163,
+  "voice": "en-US-AndrewNeural",
+  "rate": "+4%",
+  "scenes": [
+    {
+      "id": "01-landing",
+      "start": 0,
+      "end": 8,
+      "zoom": [1.0, 1.06],
+      "cues": [
+        { "at": 0.4, "text": "People don't miss bills because they're careless." },
+        { "at": 3.8, "text": "They miss them because bills arrive as email." }
+      ]
+    },
+    {
+      "id": "02-how",
+      "start": 8,
+      "end": 18,
+      "zoom": [1.06, 1.0],
+      "cues": [
+        {
+          "at": 8.4,
+          "text": "Deadline Bill Guard turns a forwarded invoice into a payable bill."
+        },
+        { "at": 13.2, "text": "Then makes sure you never pay a late fee again." }
+      ]
+    },
+    {
+      "id": "03-demo-login",
+      "start": 18,
+      "end": 28,
+      "zoom": [1.0, 1.015],
+      "cues": [
+        {
+          "at": 18.4,
+          "text": "One click opens the demo with twelve bills, five subscriptions, and thirty days of history already loaded."
+        }
+      ]
+    },
+    {
+      "id": "04-dashboard",
+      "start": 28,
+      "end": 42,
+      "zoom": [1.015, 1.0],
+      "cues": [
+        { "at": 28.4, "text": "This is the one screen that answers what's due, and what's late." },
+        { "at": 32.6, "text": "And how much recurring spend is quietly leaving every month." }
+      ]
+    },
+    {
+      "id": "05-insights",
+      "start": 42,
+      "end": 55,
+      "zoom": [1.0, 1.015],
+      "cues": [
+        { "at": 42.4, "text": "Four reminders are scheduled for every bill." },
+        {
+          "at": 45.6,
+          "text": "The subscription radar totals the plans you forgot you were paying for."
+        }
+      ]
+    },
+    {
+      "id": "06-inbox",
+      "start": 55,
+      "end": 62,
+      "zoom": [1.015, 1.0],
+      "cues": [
+        { "at": 55.4, "text": "Now the part that does the work: the inbox." }
+      ]
+    },
+    {
+      "id": "07-extract",
+      "start": 62,
+      "end": 76,
+      "zoom": [1.0, 1.015],
+      "cues": [
+        { "at": 62.4, "text": "Forward an invoice, or paste it." },
+        { "at": 65.2, "text": "A classifier decides if it's really a bill." },
+        {
+          "at": 68.4,
+          "text": "Then an extractor pulls the merchant, amount, currency, due date, and invoice number."
+        }
+      ]
+    },
+    {
+      "id": "08-classify",
+      "start": 76,
+      "end": 88,
+      "zoom": [1.015, 1.0],
+      "cues": [
+        { "at": 76.4, "text": "Promotions are ignored." },
+        {
+          "at": 78.8,
+          "text": "Anything under sixty percent confidence goes to a human review queue, never silently into your bills."
+        }
+      ]
+    },
+    {
+      "id": "09-bill-detail",
+      "start": 88,
+      "end": 100,
+      "zoom": [1.0, 1.015],
+      "cues": [
+        {
+          "at": 88.4,
+          "text": "Every field is validated with Zod, cross-checked by a deterministic parser, and scored for confidence."
+        },
+        { "at": 95.0, "text": "You can audit the source email." }
+      ]
+    },
+    {
+      "id": "10-reminders",
+      "start": 100,
+      "end": 110,
+      "zoom": [1.015, 1.0],
+      "cues": [
+        { "at": 100.4, "text": "The reminder ladder is scheduled automatically." },
+        { "at": 103.8, "text": "Seven, three, one, and zero days before the due date." }
+      ]
+    },
+    {
+      "id": "11-paypal",
+      "start": 110,
+      "end": 128,
+      "zoom": [1.0, 1.015],
+      "cues": [
+        { "at": 110.4, "text": "PayPal isn't bolted on." },
+        { "at": 113.0, "text": "Orders v2 creates the order with the bill id." },
+        {
+          "at": 116.6,
+          "text": "The payer approves, and the return handler captures the payment."
+        }
+      ]
+    },
+    {
+      "id": "12-activity",
+      "start": 128,
+      "end": 140,
+      "zoom": [1.015, 1.0],
+      "cues": [
+        { "at": 128.4, "text": "A verified webhook reconciles the capture." },
+        { "at": 131.8, "text": "Every order, capture, and event lands in the bill's audit trail." }
+      ]
+    },
+    {
+      "id": "13-subscriptions",
+      "start": 140,
+      "end": 152,
+      "zoom": [1.0, 1.015],
+      "cues": [
+        { "at": 140.4, "text": "Subscriptions group themselves." },
+        { "at": 143.0, "text": "The plans you never use become a yearly number you can act on." }
+      ]
+    },
+    {
+      "id": "14-export",
+      "start": 152,
+      "end": 163,
+      "zoom": [1.015, 1.0],
+      "cues": [
+        { "at": 152.4, "text": "Everything exports to CSV." },
+        { "at": 155.4, "text": "No bank logins, no scraping." },
+        { "at": 158.0, "text": "The inbox you already use is the source of truth." }
+      ]
+    },
+    {
+      "id": "15-end-card",
+      "start": 163,
+      "end": 175,
+      "zoom": [1.0, 1.04],
+      "cues": [
+        { "at": 163.6, "text": "Deadline Bill Guard." },
+        { "at": 165.8, "text": "Forward a bill, get reminded, pay with PayPal." },
+        { "at": 170.2, "text": "Source and setup are on GitHub." }
+      ]
+    }
+  ]
+}
