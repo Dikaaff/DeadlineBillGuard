@@ -58,7 +58,7 @@ reminder emails are logged. To exercise the real sandbox, follow `docs/PAYPAL_SA
 
 - Repository: <https://github.com/Dikaaff/DeadlineBillGuard>
 - Demo video: _add YouTube link before submitting_
-- Hosted demo: _add URL before submitting (optional if judges run locally)_
+- Hosted demo: <https://deadline-bill-guard.vercel.app> (Vercel + private Blob store)
 
 ## Manual checklist before submission
 
@@ -68,7 +68,7 @@ reminder emails are logged. To exercise the real sandbox, follow `docs/PAYPAL_SA
 - [x] Working prototype (typecheck, lint and production build pass)
 - [x] PayPal + AI are both meaningful and documented
 - [ ] Demo video under 3 minutes on YouTube (public) - use `docs/DEMO_SCRIPT.md`
-- [ ] Screenshots added to the README (dashboard, inbox, bill detail, PayPal activity)
-- [ ] Hosted demo URL (optional, recommended) with a persistent `DBG_DATA_DIR`
+- [x] Screenshots added to the README (dashboard, inbox, bill detail, PayPal activity)
+- [x] Hosted demo URL with shared persistence (private Vercel Blob store)
 - [ ] GitHub repo About: description, license, topics, website
 - [ ] Run one real PayPal sandbox payment end to end and record it

@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { get, put } from "@vercel/blob";
 import type {
   Bill,
   BillFilters,
@@ -20,6 +21,16 @@ import { createSeedDatabase, isoDate } from "./seed";
 
 const DATA_DIR = process.env.DBG_DATA_DIR ?? path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
+
+// On Vercel the filesystem is per-instance and ephemeral, so a file-backed
+// store loses writes made by another lambda. When a Blob token is present the
+// same JSON document lives in a private Vercel Blob store instead.
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+const BLOB_PATHNAME = "deadline-bill-guard/store.json";
+const USE_BLOB = Boolean(BLOB_TOKEN);
+const BLOB_CACHE_MS = 750;
+
+let blobCache: { db: Database; at: number } | null = null;
 
 let queue: Promise<unknown> = Promise.resolve();
 
@@ -65,7 +76,57 @@ async function writeDatabase(db: Database): Promise<void> {
   await renameWithRetry(tmp, DATA_FILE);
 }
 
+type BlobSnapshot = { db: Database };
+
+async function readBlobSnapshot(): Promise<BlobSnapshot | null> {
+  const result = await get(BLOB_PATHNAME, {
+    access: "private",
+    token: BLOB_TOKEN,
+    useCache: false,
+  });
+  if (!result || result.statusCode !== 200) return null;
+  const raw = await new Response(result.stream).text();
+  if (!raw.trim()) return null;
+  return { db: JSON.parse(raw) as Database };
+}
+
+async function writeBlob(db: Database): Promise<void> {
+  await put(BLOB_PATHNAME, JSON.stringify(db, null, 2), {
+    access: "private",
+    token: BLOB_TOKEN,
+    contentType: "application/json",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    cacheControlMaxAge: 60,
+  });
+}
+
+async function readBlobDatabase(): Promise<Database> {
+  if (blobCache && Date.now() - blobCache.at < BLOB_CACHE_MS) {
+    return blobCache.db;
+  }
+  const snapshot = await readBlobSnapshot();
+  if (snapshot) {
+    blobCache = { db: snapshot.db, at: Date.now() };
+    return snapshot.db;
+  }
+  const seeded = createSeedDatabase();
+  await writeBlob(seeded);
+  blobCache = { db: seeded, at: Date.now() };
+  return seeded;
+}
+
+async function mutateBlob<T>(fn: (db: Database) => T | Promise<T>): Promise<T> {
+  const snapshot = await readBlobSnapshot();
+  const db = snapshot?.db ?? createSeedDatabase();
+  const result = await fn(db);
+  await writeBlob(db);
+  blobCache = { db, at: Date.now() };
+  return result;
+}
+
 async function readDatabase(): Promise<Database> {
+  if (USE_BLOB) return readBlobDatabase();
   try {
     const raw = await fs.readFile(DATA_FILE, "utf8");
     if (!raw.trim()) throw new Error("empty store");
@@ -79,6 +140,7 @@ async function readDatabase(): Promise<Database> {
 
 async function mutate<T>(fn: (db: Database) => T | Promise<T>): Promise<T> {
   return enqueue(async () => {
+    if (USE_BLOB) return mutateBlob(fn);
     const db = await readDatabase();
     const result = await fn(db);
     await writeDatabase(db);
@@ -93,7 +155,13 @@ function now(): string {
 export const store = {
   async reset(): Promise<void> {
     return enqueue(async () => {
-      await writeDatabase(createSeedDatabase());
+      const seeded = createSeedDatabase();
+      if (USE_BLOB) {
+        await writeBlob(seeded);
+        blobCache = { db: seeded, at: Date.now() };
+        return;
+      }
+      await writeDatabase(seeded);
     });
   },
 

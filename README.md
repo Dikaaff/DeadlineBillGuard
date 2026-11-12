@@ -6,6 +6,8 @@ Deadline Bill Guard turns forwarded bill emails into structured, payable bills, 
 
 Built for the **"Build What's Next with PayPal and AI"** hackathon.
 
+**Live demo:** <https://deadline-bill-guard.vercel.app> — open the app, click **Enter the demo**, no signup or credentials needed.
+
 [![Next.js](https://img.shields.io/badge/Next.js-16.4.3-black)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19.3-087EA4)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)](https://www.typescriptlang.org)
@@ -227,7 +229,7 @@ See [`docs/PAYPAL_SANDBOX.md`](docs/PAYPAL_SANDBOX.md) for real sandbox credenti
 
 ## Data model
 
-All entities live in one file-backed JSON database (`.data/store.json` by default, override with `DBG_DATA_DIR`).
+All entities live in one JSON database. Locally it is a file (`.data/store.json`, override with `DBG_DATA_DIR`); when `BLOB_READ_WRITE_TOKEN` is set the same document is stored in a private Vercel Blob store so every serverless instance sees the same data.
 
 | Entity | Purpose |
 | --- | --- |
@@ -238,7 +240,7 @@ All entities live in one file-backed JSON database (`.data/store.json` by defaul
 | `IngestLog` | Every inbound email and its outcome (`bill`, `ignored`, `uncertain`, `duplicate`) |
 | `PaypalEvent` | Order, capture, and webhook events keyed by PayPal ids and bill id |
 
-Writes are serialized through an in-process queue and committed with a temp-file + rename, with retries for the Windows file-locking edge cases. The store is intentionally swappable: every access goes through `src/lib/db/store.ts`, so a Postgres adapter can replace it without touching the UI or routes.
+File writes are serialized through an in-process queue and committed with a temp-file + rename, with retries for the Windows file-locking edge cases. Blob writes refresh a short-lived per-instance read cache. The store is intentionally swappable: every access goes through `src/lib/db/store.ts`, so a Postgres adapter can replace it without touching the UI or routes.
 
 Seeded demo state: **12 bills**, **5 subscriptions**, one demo user (`you@billguard.app`, timezone `America/Los_Angeles`).
 
@@ -256,7 +258,7 @@ Seeded demo state: **12 bills**, **5 subscriptions**, one demo user (`you@billgu
 | AI | Groq (primary), Google Gemini (fallback), deterministic heuristics |
 | Payments | PayPal Orders v2 + Webhooks |
 | Email | Resend (console fallback) |
-| Storage | File-backed JSON store (no external database) |
+| Storage | JSON store: local file, or private Vercel Blob in production |
 | Tests | Playwright |
 
 > This project pins Next.js **16.4.3**. That release line has breaking changes versus older App Router versions — read `node_modules/next/dist/docs/` before changing routing or config code.
@@ -320,7 +322,8 @@ Copy `.env.example` to `.env.local` (or `.env` in Docker). Nothing is required f
 | `NODE_ENV` | `development` | Standard Node environment flag. |
 | `VERCEL_URL` | — | Injected by Vercel automatically; leave unset locally. |
 | `CRON_SECRET` | empty | Shared secret for `/api/cron/reminders`. Empty leaves the endpoint open (fine for local use). |
-| `DBG_DATA_DIR` | `./.data` | Directory for the file-backed JSON store. Point at a persistent volume in production. |
+| `DBG_DATA_DIR` | `./.data` | Directory for the file-backed JSON store. Ignored when the Blob token is set. |
+| `BLOB_READ_WRITE_TOKEN` | empty | Enables the private Vercel Blob store. Added automatically when a Blob store is linked to the Vercel project. |
 | `GROQ_API_KEY` | empty | Groq API key for the classifier and extractor. |
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` | Groq model id. |
 | `GEMINI_API_KEY` | empty | Google Gemini API key (fallback provider). |
@@ -442,7 +445,25 @@ Output: `demo/out/deadline-bill-guard-demo.mp4` (~30 MB, git-ignored). Timings, 
 
 ## Deployment
 
-The app needs a **persistent filesystem** for `.data/store.json`. Vercel's serverless filesystem is ephemeral, so use Docker on a host with a volume (Render, Railway, Fly.io, a VPS) or point `DBG_DATA_DIR` at a mounted disk.
+The store has two backends. Pick the one that matches the host:
+
+- **Vercel + Blob (how the live demo runs):** serverless filesystems are per-instance and ephemeral, so link a private Blob store. The app switches automatically when `BLOB_READ_WRITE_TOKEN` is present.
+- **Docker, Render, Railway, Fly.io, or a VPS:** keep `DBG_DATA_DIR` on a persistent volume.
+
+### Vercel + Blob
+
+```bash
+vercel link
+vercel blob create-store deadline-bill-guard --access private --yes
+
+openssl rand -base64 32   # paste into the next command
+vercel env add AUTH_SECRET production
+vercel env add NEXT_PUBLIC_APP_URL production   # https://<your-domain>
+
+vercel deploy --prod
+```
+
+`vercel blob create-store --access private` links the store to the project and injects `BLOB_READ_WRITE_TOKEN` into production, preview, and development. `DBG_DATA_DIR` is ignored in this mode.
 
 ### Docker
 
@@ -465,7 +486,7 @@ The image builds with `output: "standalone"` and starts `node server.js` with a 
 ### Production checklist
 
 1. Set `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` to production values.
-2. Mount a persistent volume at `DBG_DATA_DIR`.
+2. Persist data: link a private Blob store on Vercel, or mount a volume at `DBG_DATA_DIR` elsewhere.
 3. **Reminders:** schedule a request to `https://<your-domain>/api/cron/reminders` and set `CRON_SECRET`.
 4. **PayPal:** set `PAYPAL_MODE=live`, add the live client id/secret and webhook id, then register `https://<your-domain>/api/paypal/webhook` in the PayPal developer dashboard.
 5. **Email:** set `RESEND_API_KEY` and a verified `REMINDER_FROM` sender; set `INBOUND_EMAIL_SECRET` before pointing a mail provider at `/api/email/inbound`.
@@ -493,7 +514,7 @@ The image builds with `output: "standalone"` and starts `node server.js` with a 
 
 Honest constraints of the current build:
 
-- **Single-process store.** Serialized writes protect the JSON file, but it does not support multi-instance horizontal scaling. A Postgres adapter is the next step.
+- **Last-write-wins store.** Blob mode shares one document across instances, but each write replaces the whole document and is not transactional. With a single demo workspace this is invisible; a Postgres adapter is the next step.
 - **Inbound email is an endpoint, not a mailbox.** There is no MX record or mail-provider integration; you forward mail to `/api/email/inbound` (or paste it). Wiring Gmail/Outlook OAuth or an inbound-parse provider is planned.
 - **Reminders need an external scheduler.** The cron endpoint is ready, but nothing calls it unless you configure a scheduler.
 - **Email-only demo auth.** There is no password or OAuth login yet; the session signs a demo user.

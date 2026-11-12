@@ -1,0 +1,15 @@
+﻿node_modules/
+.next/
+demo/
+docs/
+scripts/
+.git/
+.vercel/
+test-results/
+playwright-report/
+.data/
+dbg-tok.txt
+*.log
+.env*
+!.env.example
+tsconfig.tsbuildinfo
